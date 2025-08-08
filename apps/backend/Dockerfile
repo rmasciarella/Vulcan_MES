@@ -1,5 +1,8 @@
 FROM python:3.11
 
+# Install redis-cli
+RUN apt-get update && apt-get install -y --no-install-recommends redis-tools && rm -rf /var/lib/apt/lists/*
+
 ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app/

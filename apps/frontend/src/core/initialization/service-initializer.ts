@@ -58,7 +58,9 @@ class ServiceInitializer {
     } catch (error) {
       ServiceInitializer.isInitializing = false
       ServiceInitializer.initializationPromise = null
-      logger.error('[ServiceInitializer] Service initialization failed:', String(error))
+logger.error('[ServiceInitializer] Service initialization failed:', {
+        err: error instanceof Error ? error : new Error(String(error)),
+      })
       throw error
     } finally {
       ServiceInitializer.isInitializing = false
@@ -86,7 +88,9 @@ class ServiceInitializer {
 
       logger.debug('[ServiceInitializer] Core services initialized')
     } catch (error) {
-      logger.error('[ServiceInitializer] Failed to initialize core services:', String(error))
+logger.error('[ServiceInitializer] Failed to initialize core services:', {
+        err: error instanceof Error ? error : new Error(String(error)),
+      })
       throw error
     }
   }
@@ -109,13 +113,17 @@ class ServiceInitializer {
           await factory.getMachineUseCases()
           logger.debug('[ServiceInitializer] Background pre-warming completed')
         } catch (error) {
-          logger.warn('[ServiceInitializer] Background pre-warming failed:', String(error))
+logger.warn('[ServiceInitializer] Background pre-warming failed:', {
+            err: error instanceof Error ? error : new Error(String(error)),
+          })
         }
       }, 100)
 
       logger.debug('[ServiceInitializer] Services pre-warmed')
     } catch (error) {
-      logger.warn('[ServiceInitializer] Pre-warming failed (non-critical):', String(error))
+logger.warn('[ServiceInitializer] Pre-warming failed (non-critical):', {
+      err: error instanceof Error ? error : new Error(String(error)),
+    })
       // Don't throw here - pre-warming is optional
     }
   }
@@ -173,7 +181,9 @@ class ServiceInitializer {
       
       logger.debug(`[ServiceInitializer] Warmed up ${serviceName} service`)
     } catch (error) {
-      logger.warn(`[ServiceInitializer] Failed to warm up ${serviceName} service:`, String(error))
+logger.warn(`[ServiceInitializer] Failed to warm up ${serviceName} service:`, {
+        err: error instanceof Error ? error : new Error(String(error)),
+      })
     }
   }
 }

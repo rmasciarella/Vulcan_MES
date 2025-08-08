@@ -9,6 +9,7 @@ RUN groupadd -r appuser && useradd -r -g appuser appuser
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
+    redis-tools \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && update-ca-certificates

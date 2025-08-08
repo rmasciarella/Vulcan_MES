@@ -1,6 +1,9 @@
 # Frontend Dockerfile
 FROM node:20-alpine AS base
 
+# Install redis-cli (provided by the 'redis' package on Alpine)
+RUN apk add --no-cache redis
+
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
 
