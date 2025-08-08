@@ -66,6 +66,7 @@ services:
       - ./packages/domain:/app/packages/domain
       - ./packages/shared:/app/packages/shared
       - ./packages/ui:/app/packages/ui
+      - ./scripts:/app/scripts:ro
 
 volumes:
   postgres_data:

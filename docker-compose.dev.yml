@@ -22,6 +22,7 @@ services:
       - ./packages/domain:/app/packages/domain
       - ./packages/shared:/app/packages/shared
       - ./packages/ui:/app/packages/ui
+      - ./scripts:/app/scripts:ro
     environment:
       NODE_ENV: development
     command: pnpm dev
