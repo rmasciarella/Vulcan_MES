@@ -19,11 +19,19 @@ WORKDIR /app
 COPY pnpm-workspace.yaml ./pnpm-workspace.yaml
 COPY package.json ./package.json
 COPY pnpm-lock.yaml ./pnpm-lock.yaml
+# Copy root tsconfig so frontend's extends path resolves
+COPY tsconfig.json ./tsconfig.json
 
 # Make sure the app's manifest exists at its workspace path
 ARG APP_DIR=apps/frontend
 RUN mkdir -p ${APP_DIR}
 COPY ${APP_DIR}/package.json ${APP_DIR}/package.json
+
+# Also copy internal workspace package manifests so pnpm links them
+RUN mkdir -p packages/domain packages/shared packages/ui
+COPY packages/domain/package.json packages/domain/package.json
+COPY packages/shared/package.json packages/shared/package.json
+COPY packages/ui/package.json packages/ui/package.json
 
 # Install only the frontend workspace with the frozen root lockfile
 RUN pnpm --filter @vulcan/frontend install --frozen-lockfile
@@ -35,9 +43,12 @@ WORKDIR /app/apps/frontend
 # Bring over node_modules and lockfile context from deps
 COPY --from=deps /app /app
 
-# Copy the app source
+# Copy the app source and internal workspaces used at build time
 ARG APP_DIR=apps/frontend
 COPY ${APP_DIR}/ .
+COPY packages/domain /app/packages/domain
+COPY packages/shared /app/packages/shared
+COPY packages/ui /app/packages/ui
 
 EXPOSE 3000
 CMD ["pnpm", "dev"]
@@ -49,6 +60,9 @@ WORKDIR /app/apps/frontend
 COPY --from=deps /app /app
 ARG APP_DIR=apps/frontend
 COPY ${APP_DIR}/ .
+COPY packages/domain /app/packages/domain
+COPY packages/shared /app/packages/shared
+COPY packages/ui /app/packages/ui
 
 # Build the application
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -65,7 +79,6 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup -g 1001 -S nodejs && adduser -S -u 1001 -G nodejs nextjs
 
 # Copy built application
-COPY --from=builder /app/apps/frontend/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/apps/frontend/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/frontend/.next/static ./.next/static
 
