@@ -1,0 +1,33 @@
+[build]
+  base = "apps/frontend"
+  command = "pnpm build"
+  publish = ".next"
+
+[build.environment]
+  NEXT_PUBLIC_ENABLE_MOCK_DATA = "false"
+  NEXT_PUBLIC_APP_ENV = "production"
+  NEXT_PUBLIC_APP_NAME = "Vulcan MES"
+  NEXT_PUBLIC_ENABLE_DEBUG_UI = "false"
+  NEXT_PUBLIC_ENABLE_DB_HEALTH_CHECK = "false"
+  # Ensure pnpm version matches the repo
+  NODE_VERSION = "20"
+  NPM_FLAGS = "--version"
+  # Netlify uses Corepack; we'll enable pnpm in the install command below
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Next.js routing on Netlify
+[[redirects]]
+  from = "/*"
+  to = "/.netlify/functions/___netlify-server-handler"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
