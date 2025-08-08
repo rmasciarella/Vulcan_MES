@@ -9,7 +9,7 @@
   NEXT_PUBLIC_APP_NAME = "Vulcan MES"
   NEXT_PUBLIC_ENABLE_DEBUG_UI = "false"
   NEXT_PUBLIC_ENABLE_DB_HEALTH_CHECK = "false"
-  NEXT_PUBLIC_API_URL = "REPLACE_WITH_PROD_BACKEND_URL"
+  # NEXT_PUBLIC_API_URL should be set in Netlify UI environment variables if needed
   # Ensure pnpm version matches the repo
   NODE_VERSION = "20"
   NPM_FLAGS = "--version"

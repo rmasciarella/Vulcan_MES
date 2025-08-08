@@ -25,7 +25,7 @@ const clientEnvSchema = z.object({
   NEXT_PUBLIC_APP_NAME: z.string().default('Vulcan MES'),
   NEXT_PUBLIC_APP_ENV: z.enum(['development', 'staging', 'production']).default('development'),
   // Optional base URL for backend API; when set, all relative API calls will be prefixed with this
-  NEXT_PUBLIC_API_URL: z.string().url('Invalid API base URL').optional(),
+  NEXT_PUBLIC_API_URL: z.string().url('Invalid API base URL').optional().or(z.literal('')),
   NEXT_PUBLIC_ENABLE_DEBUG_UI: z
     .string()
     .default('false')
@@ -134,6 +134,7 @@ const input = {
     NEXT_PUBLIC_APP_ENV: ['development', 'staging', 'production'].includes(process.env['NEXT_PUBLIC_APP_ENV'] || '') 
       ? (process.env['NEXT_PUBLIC_APP_ENV'] as 'development' | 'staging' | 'production')
       : 'development',
+    NEXT_PUBLIC_API_URL: process.env['NEXT_PUBLIC_API_URL'],
     NEXT_PUBLIC_ENABLE_DEBUG_UI: enableDebug,
     NEXT_PUBLIC_ENABLE_MOCK_DATA: enableMock,
     NEXT_PUBLIC_ENABLE_DB_HEALTH_CHECK: enableHealthCheck,
