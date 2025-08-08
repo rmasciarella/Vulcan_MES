@@ -51,8 +51,8 @@ services:
 
   frontend:
     build:
-      context: ./apps/frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/frontend/Dockerfile
     ports:
       - "3000:3000"
     environment:
@@ -62,9 +62,10 @@ services:
     depends_on:
       - backend
     volumes:
-      - ./apps/frontend:/app
-      - /app/node_modules
-      - /app/.next
+      - ./apps/frontend:/app/apps/frontend
+      - ./packages/domain:/app/packages/domain
+      - ./packages/shared:/app/packages/shared
+      - ./packages/ui:/app/packages/ui
 
 volumes:
   postgres_data:

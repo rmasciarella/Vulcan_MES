@@ -14,14 +14,17 @@ services:
 
   frontend:
     build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
       target: development
     volumes:
-      - ./apps/frontend:/app
-      - /app/node_modules
-      - /app/.next
+      - ./apps/frontend:/app/apps/frontend
+      - ./packages/domain:/app/packages/domain
+      - ./packages/shared:/app/packages/shared
+      - ./packages/ui:/app/packages/ui
     environment:
       NODE_ENV: development
-    command: npm run dev
+    command: pnpm dev
 
   adminer:
     image: adminer
