@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "paths": {
+      "@vulcan/domain": ["./packages/domain/src/index.ts"],
+      "@vulcan/domain/*": ["./packages/domain/src/*"],
+      "@vulcan/domain/testing": ["./packages/domain/src/testing/index.ts"],
+      "@vulcan/shared/*": ["./packages/shared/src/*"],
+      "@vulcan/ui/*": ["./packages/ui/src/*"]
+    },
+    "baseUrl": "."
+  },
+  "exclude": ["node_modules", "dist", "build", ".turbo", ".next"]
+}

@@ -1,0 +1,25 @@
+reviewId: REW-20250101-sample
+date: 2025-01-01
+reviewers:
+  - Alice
+  - Bob
+scope: apps/api, apps/web, worker, supabase
+related:
+  - https://github.com/org/repo/pull/123
+findings:
+  - id: F-1
+    title: E2E smoke tests flaky on CI
+    area: apps/web-e2e
+    files:
+      - apps/web/e2e/smoke.spec.ts
+    severity: High
+    acceptanceCriteria: [AC-5]
+    status: Open
+    owner: QA
+    dueDate: 2025-01-10
+    evidence:
+      - https://ci.example.com/runs/abc
+    impact: Intermittent pipeline failures block deploys
+    recommendation: Quarantine flaky spec; stabilize selectors; add retries for network calls
+    notes: Flakiness rises during parallel jobs
+

@@ -1,0 +1,23 @@
+# Personal overrides for direnv (DO NOT COMMIT SECRETS)
+# Copy to .envrc.local and set your local values.
+
+# Backend API
+export NEXT_PUBLIC_API_URL="http://localhost:8000"
+
+# Supabase (example values; replace with your project)
+# Project URL (same for frontend/backend)
+export SUPABASE_URL="https://your-project.supabase.co"
+export NEXT_PUBLIC_SUPABASE_URL="$SUPABASE_URL"
+
+# New dashboard naming (preferred to paste):
+# Publishable key (safe for browser)
+# export NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="sb_publishable_..."
+# Secret key (server-only)
+# export SUPABASE_SECRET="sb_secret_..."
+
+# Legacy variable names (still supported by our code):
+# export NEXT_PUBLIC_SUPABASE_ANON_KEY="ey...anon..."
+# export SUPABASE_SERVICE_KEY="ey...service..."   # server-only, do not expose publicly
+
+# Optional: custom app branding for local
+export NEXT_PUBLIC_APP_NAME="Vulcan (Local)"

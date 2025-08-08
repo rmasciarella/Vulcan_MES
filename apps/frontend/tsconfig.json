@@ -1,0 +1,63 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "jsx": "preserve",
+    "incremental": true,
+    "baseUrl": ".",
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@/types/*": [
+        "./types/*"
+      ],
+      "@/core/*": [
+        "./src/core/*"
+      ],
+      "@/core/domains/*": [
+        "../../packages/domain/src/*"
+      ],
+      "@vulcan/domain": [
+        "../../packages/domain/src/index.ts"
+      ],
+      "@vulcan/domain/*": [
+        "../../packages/domain/src/*"
+      ],
+      "@vulcan/domain/testing": [
+        "../../packages/domain/src/testing/index.ts"
+      ]
+    },
+    "target": "ES2022",
+    "strict": true,
+    "allowJs": false,
+    "noImplicitAny": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "noFallthroughCasesInSwitch": true,
+    "noPropertyAccessFromIndexSignature": true
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/__tests__/**",
+    "tests/**",
+    "playwright.config.ts"
+  ]
+}

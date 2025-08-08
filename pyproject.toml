@@ -1,0 +1,240 @@
+[project]
+name = "vulcan-monorepo"
+version = "1.0.0"
+description = "Vulcan MES - Manufacturing Execution System Monorepo"
+requires-python = ">=3.11,<4.0"
+readme = "README.md"
+
+[tool.uv]
+# Define workspace members
+workspace = { members = ["apps/backend"] }
+
+# Development dependencies for the entire workspace
+dev-dependencies = [
+    "pytest>=7.4.3",
+    "pytest-cov>=4.1.0",
+    "pytest-timeout>=2.3.1",
+    "mypy>=1.8.0",
+    "ruff>=0.2.2",
+    "pre-commit>=3.6.2",
+    "coverage>=7.4.3",
+    "ipython>=8.18.0",
+]
+
+[tool.uv.sources]
+# Pin workspace member
+backend = { workspace = true }
+
+[tool.ruff]
+# Ruff configuration for the entire monorepo
+line-length = 88
+target-version = "py311"
+extend-include = ["*.pyi?"]
+exclude = ["alembic"]
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+    "N",  # pep8-naming
+    "ARG001", # unused arguments in functions
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+    "B008",  # do not perform function calls in argument defaults
+    "W191",  # indentation contains tabs
+    "B904",  # Allow raising exceptions without from e, for HTTPException
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ruff.lint.pyupgrade]
+# Preserve types, even if a file imports `from __future__ import annotations`.
+keep-runtime-typing = true
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+known-third-party = ["fastapi", "pydantic", "sqlmodel", "supabase", "ortools"]
+
+[tool.mypy]
+# Enterprise-grade type checking configuration (TypeScript-equivalent strict mode)
+python_version = "3.11"
+strict = true
+exclude = ["venv", ".venv", "alembic"]
+# Disallow untyped definitions
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_untyped_decorators = true
+# Optional handling
+no_implicit_optional = true
+# Warning controls
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_return_any = true
+warn_unreachable = true
+warn_no_return = true
+warn_unused_configs = true
+# Output formatting
+show_error_codes = true
+show_column_numbers = true
+color_output = true
+pretty = true
+error_summary = true
+# Strict equality and type checking
+check_untyped_defs = true
+strict_equality = true
+follow_imports = "normal"
+no_implicit_reexport = true
+namespace_packages = true
+
+# Ignore missing imports for third-party libraries
+[[tool.mypy.overrides]]
+module = [
+    "ortools.*",
+    "supabase.*",
+    "gotrue.*",
+    "storage3.*",
+    "realtime.*",
+    "celery.*",
+    "redis.*",
+    "prometheus_client.*",
+    "circuitbreaker.*",
+    "sqlmodel.*",
+    "sqlalchemy.*",
+    "pydantic",
+    "pydantic.*",
+    "pytest",
+    "pytest.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+# Consolidated pytest configuration for the entire monorepo
+minversion = "7.0"
+testpaths = ["apps/backend/app/tests", "apps/backend/tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*", "Test*E2E"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--verbose",
+    "--tb=short",
+    "--durations=10",
+    "--show-capture=no",
+    "--cov=apps/backend/app",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-fail-under=80",
+    "--maxfail=5",
+    "--ignore=docs",
+    "--ignore=setup.py",
+    "--ignore=scripts",
+    "--doctest-modules",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests (fast, no external dependencies)",
+    "e2e: marks tests as end-to-end tests",
+    "performance: Performance and load tests",
+    "security: Security and penetration tests",
+    "containers: Tests requiring test containers",
+    "skip_in_ci: Skip these tests in CI environment",
+    "requires_network: Tests that require network access",
+    "requires_gpu: Tests that require GPU resources",
+    "websocket: WebSocket integration tests (requires WebSocket server)",
+    "audit_compliance: Audit trail and compliance tests",
+    "data_integrity: Data integrity and transaction tests",
+    "error_recovery: Error handling and recovery tests",
+    "multi_user: Multi-user workflow tests",
+]
+# Test timeout (in seconds)
+timeout = 300
+# Warnings configuration
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+    "ignore:.*unclosed.*:ResourceWarning",
+    "ignore:.*ssl.*:ResourceWarning",
+]
+# Asyncio configuration
+asyncio_mode = "auto"
+# Test collection configuration
+collect_ignore = [
+    "setup.py",
+    ".tox",
+    ".venv",
+    "venv",
+    ".pytest_cache",
+    "htmlcov",
+]
+
+[tool.coverage.run]
+# Consolidated coverage configuration
+source = ["apps/backend/app"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/migrations/*",
+    "*/.venv/*",
+    "apps/backend/app/alembic/*",
+    "apps/backend/app/initial_data.py",
+    "apps/backend/app/backend_pre_start.py",
+    "apps/backend/app/tests_pre_start.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "def __str__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "if 0:",
+]
+fail_under = 80
+show_missing = true
+skip_covered = false
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = []  # This root package doesn't contain any packages to build
+
+# Additional pytest configurations for e2e tests
+[tool.pytest_e2e]
+# E2E specific configuration (used via pytest -c pytest-e2e.ini equivalent)
+testpaths = "apps/backend/app/tests/e2e"
+python_classes = "Test*E2E"
+timeout = 300
+timeout_method = "thread"
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--tb=short",
+    "--maxfail=10",
+    "--durations=10",
+    "--color=yes",
+    "--disable-warnings",
+]

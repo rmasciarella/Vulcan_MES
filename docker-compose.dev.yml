@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      target: development
+    volumes:
+      - ./apps/backend:/app
+      - /app/.venv
+    environment:
+      DEBUG: "true"
+      RELOAD: "true"
+    command: uv run fastapi dev app/main.py --host 0.0.0.0 --reload
+
+  frontend:
+    build:
+      target: development
+    volumes:
+      - ./apps/frontend:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      NODE_ENV: development
+    command: npm run dev
+
+  adminer:
+    image: adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres

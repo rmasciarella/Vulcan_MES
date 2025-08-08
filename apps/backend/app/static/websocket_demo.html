@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Real-time Schedule Monitor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .panel h2 {
+            color: #333;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.connected {
+            background: #10b981;
+        }
+
+        .status-indicator.disconnected {
+            background: #ef4444;
+        }
+
+        .status-indicator.connecting {
+            background: #f59e0b;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #764ba2;
+        }
+
+        button:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+        }
+
+        input {
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 5px;
+            flex: 1;
+        }
+
+        .events {
+            max-height: 400px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            border-radius: 5px;
+            padding: 10px;
+        }
+
+        .event {
+            padding: 10px;
+            margin-bottom: 10px;
+            background: white;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+            animation: slideIn 0.3s;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .event-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .event-type {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .event-time {
+            color: #64748b;
+            font-size: 12px;
+        }
+
+        .event-data {
+            color: #475569;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            background: #f1f5f9;
+            padding: 5px;
+            border-radius: 3px;
+            margin-top: 5px;
+            word-break: break-all;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .metric {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .metric-label {
+            color: #64748b;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e2e8f0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            animation: alertPulse 2s infinite;
+        }
+
+        .alert.error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+        }
+
+        .alert.warning {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            color: #92400e;
+        }
+
+        .alert.info {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1e40af;
+        }
+
+        @keyframes alertPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Real-time Schedule Monitor</h1>
+
+        <div class="dashboard">
+            <!-- Connection Panel -->
+            <div class="panel">
+                <h2>Connection</h2>
+                <div class="status">
+                    <div class="status-indicator disconnected" id="statusIndicator"></div>
+                    <span id="statusText">Disconnected</span>
+                </div>
+
+                <div class="controls">
+                    <input type="text" id="tokenInput" placeholder="Enter JWT token (optional)">
+                    <button id="connectBtn">Connect</button>
+                    <button id="disconnectBtn" disabled>Disconnect</button>
+                </div>
+
+                <div class="controls">
+                    <input type="text" id="scheduleIdInput" placeholder="Schedule ID" value="test-schedule">
+                    <button id="subscribeBtn" disabled>Subscribe</button>
+                </div>
+
+                <div class="controls">
+                    <button id="pingBtn" disabled>Ping</button>
+                    <button id="statsBtn" disabled>Get Stats</button>
+                    <button id="metricsBtn" disabled>Get Metrics</button>
+                    <button id="demoBtn" disabled>Trigger Demo Events</button>
+                </div>
+            </div>
+
+            <!-- Metrics Panel -->
+            <div class="panel">
+                <h2>System Metrics</h2>
+                <div class="metrics">
+                    <div class="metric">
+                        <div class="metric-value" id="activeJobs">0</div>
+                        <div class="metric-label">Active Jobs</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="activeConnections">0</div>
+                        <div class="metric-label">Connections</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="eventsReceived">0</div>
+                        <div class="metric-label">Events</div>
+                    </div>
+                </div>
+
+                <div class="progress-bar">
+                    <div class="progress-fill" id="solverProgress" style="width: 0%">
+                        0%
+                    </div>
+                </div>
+
+                <div id="alerts"></div>
+            </div>
+        </div>
+
+        <!-- Events Panel -->
+        <div class="panel">
+            <h2>Real-time Events</h2>
+            <div class="controls">
+                <button id="clearEventsBtn">Clear Events</button>
+                <label>
+                    <input type="checkbox" id="autoScrollCheck" checked> Auto-scroll
+                </label>
+            </div>
+            <div class="events" id="eventsContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        class WebSocketMonitor {
+            constructor() {
+                this.ws = null;
+                this.reconnectTimeout = null;
+                this.eventsCount = 0;
+                this.autoScroll = true;
+
+                this.initializeElements();
+                this.attachEventListeners();
+            }
+
+            initializeElements() {
+                // Status elements
+                this.statusIndicator = document.getElementById('statusIndicator');
+                this.statusText = document.getElementById('statusText');
+
+                // Input elements
+                this.tokenInput = document.getElementById('tokenInput');
+                this.scheduleIdInput = document.getElementById('scheduleIdInput');
+
+                // Buttons
+                this.connectBtn = document.getElementById('connectBtn');
+                this.disconnectBtn = document.getElementById('disconnectBtn');
+                this.subscribeBtn = document.getElementById('subscribeBtn');
+                this.pingBtn = document.getElementById('pingBtn');
+                this.statsBtn = document.getElementById('statsBtn');
+                this.metricsBtn = document.getElementById('metricsBtn');
+                this.demoBtn = document.getElementById('demoBtn');
+                this.clearEventsBtn = document.getElementById('clearEventsBtn');
+
+                // Display elements
+                this.eventsContainer = document.getElementById('eventsContainer');
+                this.activeJobs = document.getElementById('activeJobs');
+                this.activeConnections = document.getElementById('activeConnections');
+                this.eventsReceived = document.getElementById('eventsReceived');
+                this.solverProgress = document.getElementById('solverProgress');
+                this.alerts = document.getElementById('alerts');
+                this.autoScrollCheck = document.getElementById('autoScrollCheck');
+            }
+
+            attachEventListeners() {
+                this.connectBtn.addEventListener('click', () => this.connect());
+                this.disconnectBtn.addEventListener('click', () => this.disconnect());
+                this.subscribeBtn.addEventListener('click', () => this.subscribe());
+                this.pingBtn.addEventListener('click', () => this.sendPing());
+                this.statsBtn.addEventListener('click', () => this.getStats());
+                this.metricsBtn.addEventListener('click', () => this.getMetrics());
+                this.demoBtn.addEventListener('click', () => this.triggerDemoEvents());
+                this.clearEventsBtn.addEventListener('click', () => this.clearEvents());
+                this.autoScrollCheck.addEventListener('change', (e) => {
+                    this.autoScroll = e.target.checked;
+                });
+            }
+
+            connect() {
+                const scheduleId = this.scheduleIdInput.value || 'test-schedule';
+                const token = this.tokenInput.value;
+
+                let url = `ws://localhost:8000/ws/schedules/${scheduleId}`;
+                if (token) {
+                    url += `?token=${token}`;
+                }
+
+                this.updateStatus('connecting');
+
+                try {
+                    this.ws = new WebSocket(url);
+
+                    this.ws.onopen = () => {
+                        this.updateStatus('connected');
+                        this.addEvent('Connection', 'Connected to WebSocket server', 'info');
+                    };
+
+                    this.ws.onmessage = (event) => {
+                        this.handleMessage(JSON.parse(event.data));
+                    };
+
+                    this.ws.onerror = (error) => {
+                        console.error('WebSocket error:', error);
+                        this.addEvent('Error', 'WebSocket error occurred', 'error');
+                    };
+
+                    this.ws.onclose = () => {
+                        this.updateStatus('disconnected');
+                        this.addEvent('Connection', 'Disconnected from server', 'warning');
+                        this.scheduleReconnect();
+                    };
+
+                } catch (error) {
+                    console.error('Failed to connect:', error);
+                    this.updateStatus('disconnected');
+                    this.addEvent('Error', `Failed to connect: ${error.message}`, 'error');
+                }
+            }
+
+            disconnect() {
+                if (this.reconnectTimeout) {
+                    clearTimeout(this.reconnectTimeout);
+                    this.reconnectTimeout = null;
+                }
+
+                if (this.ws) {
+                    this.ws.close();
+                    this.ws = null;
+                }
+            }
+
+            scheduleReconnect() {
+                if (this.reconnectTimeout) return;
+
+                this.reconnectTimeout = setTimeout(() => {
+                    this.reconnectTimeout = null;
+                    if (!this.ws || this.ws.readyState === WebSocket.CLOSED) {
+                        this.connect();
+                    }
+                }, 5000);
+            }
+
+            updateStatus(status) {
+                this.statusIndicator.className = `status-indicator ${status}`;
+                this.statusText.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+
+                const isConnected = status === 'connected';
+                this.connectBtn.disabled = isConnected;
+                this.disconnectBtn.disabled = !isConnected;
+                this.subscribeBtn.disabled = !isConnected;
+                this.pingBtn.disabled = !isConnected;
+                this.statsBtn.disabled = !isConnected;
+                this.metricsBtn.disabled = !isConnected;
+                this.demoBtn.disabled = !isConnected;
+            }
+
+            handleMessage(message) {
+                this.eventsCount++;
+                this.eventsReceived.textContent = this.eventsCount;
+
+                switch (message.type) {
+                    case 'connection_established':
+                        this.addEvent('Connected', `ID: ${message.connection_id}`, 'info');
+                        break;
+
+                    case 'pong':
+                        this.addEvent('Pong', 'Received pong response', 'info');
+                        break;
+
+                    case 'domain_event':
+                        this.handleDomainEvent(message);
+                        break;
+
+                    case 'solver_progress':
+                        this.handleSolverProgress(message);
+                        break;
+
+                    case 'metrics_update':
+                        this.handleMetricsUpdate(message);
+                        break;
+
+                    case 'stats':
+                        this.handleStats(message.data);
+                        break;
+
+                    case 'metrics':
+                        this.handleMetrics(message.data);
+                        break;
+
+                    case 'error':
+                        this.addEvent('Error', message.message, 'error');
+                        break;
+
+                    case 'rate_limit_exceeded':
+                        this.showAlert(`Rate limit exceeded! Remaining: ${message.remaining}`, 'warning');
+                        break;
+
+                    default:
+                        this.addEvent(message.type, JSON.stringify(message), 'info');
+                }
+            }
+
+            handleDomainEvent(message) {
+                const eventType = message.event_type;
+                const data = message.data;
+
+                let eventClass = 'info';
+                if (eventType.includes('Delayed') || eventType.includes('Conflict')) {
+                    eventClass = 'warning';
+                    this.showAlert(`${eventType}: Check schedule for conflicts!`, 'warning');
+                }
+
+                this.addEvent(eventType, JSON.stringify(data, null, 2), eventClass);
+            }
+
+            handleSolverProgress(message) {
+                const progress = message.progress;
+                this.updateSolverProgress(progress.progress_percentage);
+
+                this.addEvent(
+                    'Solver Progress',
+                    `Iteration: ${progress.iteration}, Objective: ${progress.objective_value.toFixed(2)}, Gap: ${(progress.gap * 100).toFixed(2)}%`,
+                    'info'
+                );
+            }
+
+            handleMetricsUpdate(message) {
+                const metrics = message.metrics;
+                this.activeJobs.textContent = metrics.active_jobs || 0;
+                this.activeConnections.textContent = metrics.active_connections || 0;
+            }
+
+            handleStats(stats) {
+                this.addEvent('Stats', JSON.stringify(stats, null, 2), 'info');
+                this.activeConnections.textContent = stats.total_connections || 0;
+            }
+
+            handleMetrics(metrics) {
+                this.activeJobs.textContent = metrics.active_jobs || 0;
+                this.activeConnections.textContent = metrics.active_connections || 0;
+                this.addEvent('Metrics', JSON.stringify(metrics, null, 2), 'info');
+            }
+
+            updateSolverProgress(percentage) {
+                this.solverProgress.style.width = `${percentage}%`;
+                this.solverProgress.textContent = `${Math.round(percentage)}%`;
+            }
+
+            sendMessage(message) {
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.send(JSON.stringify(message));
+                } else {
+                    this.showAlert('Not connected to server', 'error');
+                }
+            }
+
+            sendPing() {
+                this.sendMessage({
+                    type: 'ping',
+                    timestamp: new Date().toISOString()
+                });
+            }
+
+            getStats() {
+                this.sendMessage({ type: 'get_stats' });
+            }
+
+            getMetrics() {
+                this.sendMessage({ type: 'get_metrics' });
+            }
+
+            subscribe() {
+                const topics = ['all_events', 'solver_progress', 'alerts'];
+                this.sendMessage({
+                    type: 'subscribe',
+                    topics: topics
+                });
+                this.addEvent('Subscribe', `Subscribed to: ${topics.join(', ')}`, 'info');
+            }
+
+            async triggerDemoEvents() {
+                try {
+                    const response = await fetch('/api/websocket/demo/events', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.addEvent('Demo', `Triggered: ${data.events_triggered.join(', ')}`, 'info');
+                    } else {
+                        this.showAlert('Failed to trigger demo events', 'error');
+                    }
+                } catch (error) {
+                    this.showAlert(`Error: ${error.message}`, 'error');
+                }
+            }
+
+            addEvent(type, data, className = 'info') {
+                const eventDiv = document.createElement('div');
+                eventDiv.className = `event ${className}`;
+
+                const time = new Date().toLocaleTimeString();
+
+                eventDiv.innerHTML = `
+                    <div class="event-header">
+                        <span class="event-type">${type}</span>
+                        <span class="event-time">${time}</span>
+                    </div>
+                    <div class="event-data">${data}</div>
+                `;
+
+                this.eventsContainer.appendChild(eventDiv);
+
+                // Keep only last 50 events
+                while (this.eventsContainer.children.length > 50) {
+                    this.eventsContainer.removeChild(this.eventsContainer.firstChild);
+                }
+
+                // Auto-scroll to bottom
+                if (this.autoScroll) {
+                    this.eventsContainer.scrollTop = this.eventsContainer.scrollHeight;
+                }
+            }
+
+            clearEvents() {
+                this.eventsContainer.innerHTML = '';
+                this.eventsCount = 0;
+                this.eventsReceived.textContent = '0';
+            }
+
+            showAlert(message, type = 'info') {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert ${type}`;
+                alertDiv.textContent = message;
+
+                this.alerts.appendChild(alertDiv);
+
+                // Remove alert after 5 seconds
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 5000);
+            }
+        }
+
+        // Initialize the monitor when page loads
+        const monitor = new WebSocketMonitor();
+    </script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+{
+  "name": "vulcan-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Vulcan MES - Manufacturing Execution System",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "test": "turbo test",
+    "lint": "turbo lint",
+    "format": "turbo format",
+    "clean": "turbo clean && rm -rf node_modules **/node_modules",
+    "db:migrate": "turbo db:migrate",
+    "db:generate": "turbo db:generate",
+    "type-check": "turbo type-check",
+    "env-validate": "node scripts/validate-env.js",
+    "backend:install": "cd apps/backend && uv sync",
+    "backend:dev": "cd apps/backend && uv run fastapi dev app/main.py",
+    "backend:test": "cd apps/backend && uv run pytest",
+    "backend:format": "uv run ruff format apps/backend",
+    "backend:lint": "uv run ruff check apps/backend",
+    "sync": "pnpm install && uv sync"
+  },
+  "devDependencies": {
+    "@types/node": "^22.5.4",
+    "turbo": "^2.5.5",
+    "typescript": "5.8.3",
+    "prettier": "^3.6.2",
+    "eslint": "^9.5.0",
+    "@vulcan/domain": "workspace:*"
+  },
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}

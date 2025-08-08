@@ -1,0 +1,541 @@
+{
+  "info": {
+    "name": "Vulcan Engine API",
+    "description": "Complete API collection for Vulcan Engine scheduling system",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "schedule_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "job_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', response.access_token);",
+                  "    pm.collectionVariables.set('refresh_token', response.refresh_token);",
+                  "    console.log('Tokens saved successfully');",
+                  "}",
+                  "",
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has tokens', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('access_token');",
+                  "    pm.expect(response).to.have.property('refresh_token');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "admin@example.com",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "changethis123",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/login/access-token",
+              "host": ["{{base_url}}"],
+              "path": ["login", "access-token"]
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', response.access_token);",
+                  "}",
+                  "",
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{refresh_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/login/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["login", "refresh"]
+            }
+          }
+        },
+        {
+          "name": "Test Token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/users/me",
+              "host": ["{{base_url}}"],
+              "path": ["users", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health & Monitoring",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Ready Check",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health/ready",
+              "host": ["{{base_url}}"],
+              "path": ["health", "ready"]
+            }
+          }
+        },
+        {
+          "name": "Metrics",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/metrics",
+              "host": ["{{base_url}}"],
+              "path": ["metrics"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Jobs",
+      "item": [
+        {
+          "name": "Create Standard Job",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('job_id', response.id);",
+                  "}",
+                  "",
+                  "pm.test('Job created successfully', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('id');",
+                  "    pm.expect(response).to.have.property('task_count');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"job_number\": \"JOB-{{$timestamp}}\",\n  \"operation_count\": 50,\n  \"priority\": 1,\n  \"due_date\": \"2025-08-15T16:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/scheduling/domain/jobs/standard",
+              "host": ["{{base_url}}"],
+              "path": ["scheduling", "domain", "jobs", "standard"]
+            }
+          }
+        },
+        {
+          "name": "Get Job Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/scheduling/jobs/{{job_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["scheduling", "jobs", "{{job_id}}"]
+            }
+          }
+        },
+        {
+          "name": "List Jobs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/scheduling/jobs?status=pending&priority=1&page=1&per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["scheduling", "jobs"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending"
+                },
+                {
+                  "key": "priority",
+                  "value": "1"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "per_page",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Scheduling",
+      "item": [
+        {
+          "name": "Solve Scheduling Problem",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('schedule_id', response.schedule_id);",
+                  "}",
+                  "",
+                  "pm.test('Schedule created', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('schedule_id');",
+                  "    pm.expect(response).to.have.property('status');",
+                  "    pm.expect(response).to.have.property('makespan_hours');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"problem\": {\n    \"jobs\": [\n      {\n        \"id\": \"{{job_id}}\",\n        \"job_number\": \"JOB-001\",\n        \"tasks\": [\n          {\n            \"id\": \"task-001\",\n            \"operation_number\": 10,\n            \"machine_options\": [\n              {\n                \"machine_id\": \"cnc-01\",\n                \"setup_duration\": 15,\n                \"processing_duration\": 45,\n                \"requires_operator_full_duration\": true\n              }\n            ],\n            \"skill_requirements\": [\n              {\n                \"skill_type\": \"MACHINING\",\n                \"minimum_level\": 2\n              }\n            ],\n            \"predecessor_ids\": []\n          }\n        ],\n        \"priority\": 1,\n        \"due_date\": \"2025-08-15T16:00:00Z\"\n      }\n    ],\n    \"machines\": [\n      {\n        \"id\": \"cnc-01\",\n        \"name\": \"CNC Machine 01\",\n        \"zone\": \"Zone-A\",\n        \"skill_requirements\": [\n          {\n            \"skill_type\": \"MACHINING\",\n            \"minimum_level\": 2\n          }\n        ],\n        \"is_attended\": true,\n        \"is_available\": true\n      }\n    ],\n    \"operators\": [\n      {\n        \"id\": \"op-001\",\n        \"name\": \"John Smith\",\n        \"employee_id\": \"EMP001\",\n        \"skills\": [\n          {\n            \"skill_type\": \"MACHINING\",\n            \"level\": 3,\n            \"certified_date\": \"2023-01-15\",\n            \"expiry_date\": \"2026-01-15\"\n          }\n        ],\n        \"shift_pattern\": \"day\"\n      }\n    ],\n    \"calendar\": {\n      \"weekday_hours\": {\n        \"0\": {\"start_time\": \"07:00\", \"end_time\": \"16:00\"},\n        \"1\": {\"start_time\": \"07:00\", \"end_time\": \"16:00\"},\n        \"2\": {\"start_time\": \"07:00\", \"end_time\": \"16:00\"},\n        \"3\": {\"start_time\": \"07:00\", \"end_time\": \"16:00\"},\n        \"4\": {\"start_time\": \"07:00\", \"end_time\": \"16:00\"}\n      },\n      \"holidays\": []\n    }\n  },\n  \"optimization_parameters\": {\n    \"max_solving_time\": 60,\n    \"objective_weights\": {\n      \"makespan\": 0.4,\n      \"total_cost\": 0.3,\n      \"tardiness\": 0.3\n    },\n    \"enable_parallelization\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/scheduling/solve",
+              "host": ["{{base_url}}"],
+              "path": ["scheduling", "solve"]
+            }
+          }
+        },
+        {
+          "name": "Get Schedule Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/scheduling/schedules/{{schedule_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["scheduling", "schedules", "{{schedule_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Schedule Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/scheduling/schedules/{{schedule_id}}/analytics",
+              "host": ["{{base_url}}"],
+              "path": ["scheduling", "schedules", "{{schedule_id}}", "analytics"]
+            }
+          }
+        },
+        {
+          "name": "Optimize Resources",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schedule_id\": \"{{schedule_id}}\",\n  \"target_utilization\": 0.80,\n  \"resource_costs\": {\n    \"machines\": {\n      \"cnc-01\": 150.00,\n      \"cnc-02\": 150.00,\n      \"weld-01\": 120.00\n    },\n    \"operators\": {\n      \"MACHINING_L3\": 75.00,\n      \"MACHINING_L2\": 60.00,\n      \"MACHINING_L1\": 45.00,\n      \"WELDING_L2\": 65.00\n    }\n  },\n  \"constraints\": {\n    \"max_operators\": 20,\n    \"max_machines_per_zone\": {\n      \"Zone-A\": 10,\n      \"Zone-B\": 8\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/scheduling/optimize-resources",
+              "host": ["{{base_url}}"],
+              "path": ["scheduling", "optimize-resources"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Resources",
+      "item": [
+        {
+          "name": "List Machines",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/scheduling/machines?zone=Zone-A&available=true",
+              "host": ["{{base_url}}"],
+              "path": ["scheduling", "machines"],
+              "query": [
+                {
+                  "key": "zone",
+                  "value": "Zone-A"
+                },
+                {
+                  "key": "available",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Machine Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/scheduling/machines/cnc-01",
+              "host": ["{{base_url}}"],
+              "path": ["scheduling", "machines", "cnc-01"]
+            }
+          }
+        },
+        {
+          "name": "List Operators",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/scheduling/operators?skill=MACHINING&min_level=2",
+              "host": ["{{base_url}}"],
+              "path": ["scheduling", "operators"],
+              "query": [
+                {
+                  "key": "skill",
+                  "value": "MACHINING"
+                },
+                {
+                  "key": "min_level",
+                  "value": "2"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Operator Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/scheduling/operators/op-001",
+              "host": ["{{base_url}}"],
+              "path": ["scheduling", "operators", "op-001"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Domain Features",
+      "item": [
+        {
+          "name": "Validate Business Calendar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"check_datetime\": \"2025-08-10T10:30:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/scheduling/domain/calendar/validate",
+              "host": ["{{base_url}}"],
+              "path": ["scheduling", "domain", "calendar", "validate"]
+            }
+          }
+        },
+        {
+          "name": "Analyze Skills",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operators\": [\"op-001\", \"op-002\", \"op-003\"],\n  \"required_skills\": [\n    {\"skill_type\": \"MACHINING\", \"minimum_level\": 2},\n    {\"skill_type\": \"WELDING\", \"minimum_level\": 1}\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/scheduling/domain/skills/analyze",
+              "host": ["{{base_url}}"],
+              "path": ["scheduling", "domain", "skills", "analyze"]
+            }
+          }
+        },
+        {
+          "name": "Find Critical Path",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/scheduling/domain/jobs/{{job_id}}/critical-path",
+              "host": ["{{base_url}}"],
+              "path": ["scheduling", "domain", "jobs", "{{job_id}}", "critical-path"]
+            }
+          }
+        },
+        {
+          "name": "Validate Schedule",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schedule_id\": \"{{schedule_id}}\",\n  \"validation_rules\": [\n    \"precedence_constraints\",\n    \"resource_conflicts\",\n    \"calendar_constraints\",\n    \"skill_requirements\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/scheduling/domain/validate",
+              "host": ["{{base_url}}"],
+              "path": ["scheduling", "domain", "validate"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

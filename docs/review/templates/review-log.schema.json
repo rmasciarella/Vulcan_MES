@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/review-log.schema.json",
+  "title": "Zen Review Log",
+  "type": "object",
+  "properties": {
+    "reviewId": { "type": "string", "pattern": "^REW-\\d{8}-[a-z0-9-]+$" },
+    "date": { "type": "string", "format": "date" },
+    "reviewers": { "type": "array", "items": { "type": "string" } },
+    "scope": { "type": "string" },
+    "related": { "type": "array", "items": { "type": "string", "format": "uri" } },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "pattern": "^F-\\d+$" },
+          "title": { "type": "string", "minLength": 3 },
+          "area": { "type": "string" },
+          "files": { "type": "array", "items": { "type": "string" } },
+          "severity": { "type": "string", "enum": ["Critical", "High", "Medium", "Low"] },
+          "acceptanceCriteria": {
+            "type": "array",
+            "items": { "type": "string", "pattern": "^AC-(1|2|3|4|5|6)$" },
+            "minItems": 1
+          },
+          "status": { "type": "string", "enum": ["Open", "In Progress", "Mitigated", "Accepted", "Closed"] },
+          "owner": { "type": "string" },
+          "dueDate": { "type": "string", "format": "date" },
+          "evidence": { "type": "array", "items": { "type": "string" } },
+          "impact": { "type": "string" },
+          "recommendation": { "type": "string" },
+          "notes": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "links": { "type": "array", "items": { "type": "string", "format": "uri" } }
+        },
+        "required": ["id", "title", "severity", "acceptanceCriteria", "status"]
+      }
+    }
+  },
+  "required": ["reviewId", "date", "reviewers", "findings"]
+}
+

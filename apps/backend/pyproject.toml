@@ -1,0 +1,65 @@
+[project]
+name = "app"
+version = "0.1.0"
+description = ""
+requires-python = ">=3.11,<4.0"
+dependencies = [
+    "fastapi[standard]<1.0.0,>=0.114.2",
+    "python-multipart<1.0.0,>=0.0.7",
+    "email-validator<3.0.0.0,>=2.1.0.post1",
+    "passlib[bcrypt]<2.0.0,>=1.7.4",
+    "tenacity<9.0.0,>=8.2.3",
+    "pydantic>2.0",
+    "emails<1.0,>=0.6",
+    "jinja2<4.0.0,>=3.1.4",
+    "alembic<2.0.0,>=1.12.1",
+    "httpx<1.0.0,>=0.25.1",
+    "psycopg[binary]>=3.1.13,<4.0.0",
+    "sqlmodel>=0.0.21,<1.0.0",
+    # Pin bcrypt until passlib supports the latest
+    "bcrypt==4.3.0",
+    "pydantic-settings<3.0.0,>=2.2.1",
+    "sentry-sdk[fastapi]<2.0.0,>=1.40.6",
+    "pyjwt<3.0.0,>=2.8.0",
+    # Observability and monitoring
+    "structlog<25.0.0,>=24.1.0",
+    "prometheus-client<1.0.0,>=0.20.0",
+    "opentelemetry-api<2.0.0,>=1.21.0",
+    "opentelemetry-sdk<2.0.0,>=1.21.0",
+    "opentelemetry-instrumentation-fastapi<1.0.0,>=0.42b0",
+    "opentelemetry-instrumentation-sqlalchemy<1.0.0,>=0.42b0",
+    "opentelemetry-exporter-prometheus<=1.12.0rc1",
+    "circuitbreaker<2.0.0,>=1.4.0",
+    # OR-Tools for constraint programming and optimization
+    "ortools<10.0.0,>=9.8.0",
+    # Performance optimization dependencies
+    "redis<6.0.0,>=5.0.0",
+    "celery<6.0.0,>=5.3.0",
+    "psutil<6.0.0,>=5.9.0",
+    "asyncpg<1.0.0,>=0.29.0", # For async PostgreSQL operations
+    "cryptography>=45.0.6",
+    # Supabase integration
+    "supabase>=2.11.0",
+    "gotrue>=2.11.0",
+    "storage3>=0.8.1",
+    "realtime>=2.0.6",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest<8.0.0,>=7.4.3",
+    "mypy<2.0.0,>=1.8.0",
+    "ruff<1.0.0,>=0.2.2",
+    "pre-commit<4.0.0,>=3.6.2",
+    "types-passlib<2.0.0.0,>=1.7.7.20240106",
+    "coverage<8.0.0,>=7.4.3",
+    # Load testing tools
+    "locust<3.0.0,>=2.20.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# Python tool configurations have been moved to root pyproject.toml for consistency across the monorepo
+# This file now contains only project-specific metadata and dependencies
