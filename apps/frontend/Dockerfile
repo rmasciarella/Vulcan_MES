@@ -1,4 +1,4 @@
-# Frontend Dockerfile
+# Frontend Dockerfile (monorepo-aware)
 FROM node:20-alpine AS base
 
 # Install redis-cli (provided by the 'redis' package on Alpine)
@@ -7,30 +7,48 @@ RUN apk add --no-cache redis
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
 
+# Build args
+ARG APP_DIR=apps/frontend
+
 # Dependencies stage
 FROM base AS deps
 WORKDIR /app
 
-# Copy package files
-COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install --frozen-lockfile
+# Copy workspace files and lockfile from monorepo root
+# IMPORTANT: build with monorepo root as context
+COPY pnpm-workspace.yaml ./pnpm-workspace.yaml
+COPY package.json ./package.json
+COPY pnpm-lock.yaml ./pnpm-lock.yaml
+
+# Make sure the app's manifest exists at its workspace path
+ARG APP_DIR=apps/frontend
+RUN mkdir -p ${APP_DIR}
+COPY ${APP_DIR}/package.json ${APP_DIR}/package.json
+
+# Install only the frontend workspace with the frozen root lockfile
+RUN pnpm --filter @vulcan/frontend install --frozen-lockfile
 
 # Development stage
 FROM base AS development
-WORKDIR /app
+WORKDIR /app/apps/frontend
 
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+# Bring over node_modules and lockfile context from deps
+COPY --from=deps /app /app
+
+# Copy the app source
+ARG APP_DIR=apps/frontend
+COPY ${APP_DIR}/ .
 
 EXPOSE 3000
 CMD ["pnpm", "dev"]
 
 # Builder stage
 FROM base AS builder
-WORKDIR /app
+WORKDIR /app/apps/frontend
 
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+COPY --from=deps /app /app
+ARG APP_DIR=apps/frontend
+COPY ${APP_DIR}/ .
 
 # Build the application
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -44,13 +62,12 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nextjs -u 1001
+RUN addgroup -g 1001 -S nodejs && adduser -S -u 1001 -G nodejs nextjs
 
 # Copy built application
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder /app/apps/frontend/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/apps/frontend/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/frontend/.next/static ./.next/static
 
 USER nextjs
 
