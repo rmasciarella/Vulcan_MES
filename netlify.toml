@@ -1,6 +1,6 @@
 [build]
   base = "apps/frontend"
-  command = "pnpm build"
+  command = "npm run build"
   publish = ".next"
 
 [build.environment]
@@ -9,6 +9,7 @@
   NEXT_PUBLIC_APP_NAME = "Vulcan MES"
   NEXT_PUBLIC_ENABLE_DEBUG_UI = "false"
   NEXT_PUBLIC_ENABLE_DB_HEALTH_CHECK = "false"
+  NEXT_PUBLIC_API_URL = "REPLACE_WITH_PROD_BACKEND_URL"
   # Ensure pnpm version matches the repo
   NODE_VERSION = "20"
   NPM_FLAGS = "--version"

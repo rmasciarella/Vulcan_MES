@@ -2,6 +2,7 @@ from sqlmodel import Session, create_engine, select
 
 from app import crud
 from app.core.config import settings
+from app.core.database import async_session
 from app.models import User, UserCreate
 
 # Configure engine with production-ready settings

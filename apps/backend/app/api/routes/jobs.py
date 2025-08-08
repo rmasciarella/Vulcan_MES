@@ -21,7 +21,7 @@ from app.application.dtos.job_dtos import (
 from app.domain.scheduling.entities.job import Job
 from app.domain.scheduling.value_objects.enums import JobStatus, PriorityLevel
 from app.domain.shared.exceptions import (
-    BusinessRuleViolation,
+    BusinessRuleError,
     EntityNotFoundError,
     ValidationError,
 )

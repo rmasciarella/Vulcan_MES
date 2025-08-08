@@ -8,6 +8,7 @@ from .base import (
     OperatorStatus,
     PriorityLevel,
     SkillLevel,
+    TaskStatus,
 )
 from .job import Job
 from .machine import Machine, MachineCapability, MachineRequiredSkill

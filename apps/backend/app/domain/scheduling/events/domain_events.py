@@ -14,19 +14,20 @@ from uuid import UUID, uuid4
 from ..value_objects.duration import Duration
 
 
-@dataclass(frozen=True)
 class DomainEvent:
     """Base class for all domain events - matches DOMAIN.md specification exactly."""
-
-    event_id: UUID = field(default_factory=uuid4)
-    occurred_at: datetime = field(default_factory=datetime.now)
-    aggregate_id: UUID = None
+    
+    def __init__(self):
+        self.event_id = uuid4()
+        self.occurred_at = datetime.now()
+        self.aggregate_id = None
 
 
 @dataclass(frozen=True)
-class TaskScheduled(DomainEvent):
+class TaskScheduled:
     """Raised when a task is scheduled to a machine with operators."""
 
+    aggregate_id: UUID
     task_id: UUID
     job_id: UUID
     machine_id: UUID
@@ -36,7 +37,7 @@ class TaskScheduled(DomainEvent):
 
 
 @dataclass(frozen=True)
-class TaskStarted(DomainEvent):
+class TaskStarted:
     """Raised when task production begins."""
 
     task_id: UUID
@@ -47,7 +48,7 @@ class TaskStarted(DomainEvent):
 
 
 @dataclass(frozen=True)
-class TaskCompleted(DomainEvent):
+class TaskCompleted:
     """Raised when task production ends."""
 
     task_id: UUID
@@ -57,7 +58,7 @@ class TaskCompleted(DomainEvent):
 
 
 @dataclass(frozen=True)
-class OperatorAssigned(DomainEvent):
+class OperatorAssigned:
     """Raised when operator is assigned to a task."""
 
     operator_id: UUID
@@ -66,7 +67,7 @@ class OperatorAssigned(DomainEvent):
 
 
 @dataclass(frozen=True)
-class OperatorReleased(DomainEvent):
+class OperatorReleased:
     """Raised when operator is released from a task."""
 
     operator_id: UUID
@@ -74,7 +75,7 @@ class OperatorReleased(DomainEvent):
 
 
 @dataclass(frozen=True)
-class JobDelayed(DomainEvent):
+class JobDelayed:
     """Raised when job due date is at risk."""
 
     job_id: UUID
@@ -84,9 +85,10 @@ class JobDelayed(DomainEvent):
 
 
 @dataclass(frozen=True)
-class TaskStatusChanged(DomainEvent):
+class TaskStatusChanged:
     """Raised when task status changes."""
 
+    aggregate_id: UUID
     task_id: UUID
     job_id: UUID
     operation_sequence: int
@@ -96,9 +98,10 @@ class TaskStatusChanged(DomainEvent):
 
 
 @dataclass(frozen=True)
-class TaskAssignmentChanged(DomainEvent):
+class TaskAssignmentChanged:
     """Raised when task resource assignments change."""
 
+    aggregate_id: UUID
     task_id: UUID
     job_id: UUID
     operation_sequence: int
@@ -109,9 +112,10 @@ class TaskAssignmentChanged(DomainEvent):
 
 
 @dataclass(frozen=True)
-class TaskDelayed(DomainEvent):
+class TaskDelayed:
     """Raised when task is delayed."""
 
+    aggregate_id: UUID
     task_id: UUID
     job_id: UUID
     operation_sequence: int
@@ -122,7 +126,7 @@ class TaskDelayed(DomainEvent):
 
 
 @dataclass(frozen=True)
-class JobCreated(DomainEvent):
+class JobCreated:
     """Raised when a new job is created."""
 
     job_id: UUID
@@ -134,7 +138,7 @@ class JobCreated(DomainEvent):
 
 
 @dataclass(frozen=True)
-class JobStatusChanged(DomainEvent):
+class JobStatusChanged:
     """Raised when job status changes."""
 
     job_id: UUID
@@ -145,7 +149,7 @@ class JobStatusChanged(DomainEvent):
 
 
 @dataclass(frozen=True)
-class JobCompleted(DomainEvent):
+class JobCompleted:
     """Raised when all tasks in a job are completed."""
 
     job_id: UUID
@@ -157,7 +161,7 @@ class JobCompleted(DomainEvent):
 
 
 @dataclass(frozen=True)
-class SchedulePublished(DomainEvent):
+class SchedulePublished:
     """Raised when a schedule is published."""
 
     schedule_id: UUID
@@ -168,7 +172,7 @@ class SchedulePublished(DomainEvent):
 
 
 @dataclass(frozen=True)
-class ScheduleUpdated(DomainEvent):
+class ScheduleUpdated:
     """Raised when a schedule is updated."""
 
     schedule_id: UUID
@@ -179,7 +183,7 @@ class ScheduleUpdated(DomainEvent):
 
 
 @dataclass(frozen=True)
-class MachineAllocated(DomainEvent):
+class MachineAllocated:
     """Raised when machine is allocated to a task."""
 
     machine_id: UUID
@@ -190,7 +194,7 @@ class MachineAllocated(DomainEvent):
 
 
 @dataclass(frozen=True)
-class MachineReleased(DomainEvent):
+class MachineReleased:
     """Raised when machine is released from a task."""
 
     machine_id: UUID
@@ -201,7 +205,7 @@ class MachineReleased(DomainEvent):
 
 
 @dataclass(frozen=True)
-class MachineStatusChanged(DomainEvent):
+class MachineStatusChanged:
     """Raised when machine status changes."""
 
     machine_id: UUID
@@ -212,7 +216,7 @@ class MachineStatusChanged(DomainEvent):
 
 
 @dataclass(frozen=True)
-class OperatorStatusChanged(DomainEvent):
+class OperatorStatusChanged:
     """Raised when operator status changes."""
 
     operator_id: UUID
@@ -223,7 +227,7 @@ class OperatorStatusChanged(DomainEvent):
 
 
 @dataclass(frozen=True)
-class ConstraintViolated(DomainEvent):
+class ConstraintViolated:
     """Raised when a scheduling constraint is violated."""
 
     constraint_type: str
@@ -233,7 +237,7 @@ class ConstraintViolated(DomainEvent):
 
 
 @dataclass(frozen=True)
-class ResourceConflictDetected(DomainEvent):
+class ResourceConflictDetected:
     """Raised when resource conflicts are detected."""
 
     resource_type: str  # 'machine' or 'operator'
@@ -244,7 +248,7 @@ class ResourceConflictDetected(DomainEvent):
 
 
 @dataclass(frozen=True)
-class CriticalPathChanged(DomainEvent):
+class CriticalPathChanged:
     """Raised when the critical path changes."""
 
     job_id: UUID
@@ -254,7 +258,7 @@ class CriticalPathChanged(DomainEvent):
 
 
 @dataclass(frozen=True)
-class PriorityChanged(DomainEvent):
+class PriorityChanged:
     """Raised when job or task priority changes."""
 
     entity_type: str  # 'job' or 'task'
@@ -265,7 +269,7 @@ class PriorityChanged(DomainEvent):
 
 
 @dataclass(frozen=True)
-class MaintenanceScheduled(DomainEvent):
+class MaintenanceScheduled:
     """Raised when machine maintenance is scheduled."""
 
     machine_id: UUID
@@ -277,7 +281,7 @@ class MaintenanceScheduled(DomainEvent):
 
 
 @dataclass(frozen=True)
-class SkillRequirementNotMet(DomainEvent):
+class SkillRequirementNotMet:
     """Raised when operator skill requirement is not met."""
 
     operator_id: UUID
@@ -288,7 +292,7 @@ class SkillRequirementNotMet(DomainEvent):
 
 
 @dataclass(frozen=True)
-class DeadlineMissed(DomainEvent):
+class DeadlineMissed:
     """Raised when a job misses its deadline."""
 
     job_id: UUID

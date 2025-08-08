@@ -7,12 +7,13 @@ const isProd = process.env.NODE_ENV === 'production'
 const serverEnvSchema = z.object({
   // NODE_ENV is automatically managed by Next.js - DO NOT SET MANUALLY
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  // Support both new and legacy naming with proper transforms
-  SUPABASE_SECRET: z.string().min(1, 'SUPABASE_SECRET is required'),
+  // Support both new and legacy naming - optional for auth callback
+  SUPABASE_SECRET: z.string().optional(),
+  SUPABASE_SERVICE_KEY: z.string().optional(),
 }).transform((data) => ({
   ...data,
-  // Ensure consistent field naming in output
-  SUPABASE_SERVICE_KEY: data.SUPABASE_SECRET,
+  // Use whichever is available, prefer SUPABASE_SERVICE_KEY
+  SUPABASE_SERVICE_KEY: data.SUPABASE_SERVICE_KEY || data.SUPABASE_SECRET || '',
 }))
 
 // Client-side environment variables schema
@@ -23,6 +24,8 @@ const clientEnvSchema = z.object({
     .min(1, 'Supabase publishable key is required'),
   NEXT_PUBLIC_APP_NAME: z.string().default('Vulcan MES'),
   NEXT_PUBLIC_APP_ENV: z.enum(['development', 'staging', 'production']).default('development'),
+  // Optional base URL for backend API; when set, all relative API calls will be prefixed with this
+  NEXT_PUBLIC_API_URL: z.string().url('Invalid API base URL').optional(),
   NEXT_PUBLIC_ENABLE_DEBUG_UI: z
     .string()
     .default('false')
@@ -72,32 +75,17 @@ function validateServerEnv(): ServerEnv {
   const result = serverEnvSchema.safeParse(process.env)
   if (result.success) return result.data
 
-  // Legacy fallback: map SUPABASE_SERVICE_KEY -> SUPABASE_SECRET
-  if (process.env.SUPABASE_SERVICE_KEY && !process.env.SUPABASE_SECRET) {
-    warnOnce('Using legacy SUPABASE_SERVICE_KEY; please migrate to SUPABASE_SECRET')
-    process.env.SUPABASE_SECRET = process.env.SUPABASE_SERVICE_KEY
-    const retry = serverEnvSchema.safeParse(process.env)
-    if (retry.success) return retry.data
+  // Server env vars are optional - auth callback doesn't need them
+  // Only warn if neither is present AND we're in a context that needs them
+  if (!process.env.SUPABASE_SERVICE_KEY && !process.env.SUPABASE_SECRET) {
+    warnOnce('⚠️ Neither SUPABASE_SERVICE_KEY nor SUPABASE_SECRET is set. Some server features may be limited.')
   }
 
-  // In production, fail fast
-  if (isProd) {
-    // eslint-disable-next-line no-console
-    console.error('❌ Invalid server environment variables:', result.error.flatten().fieldErrors)
-    throw new Error('Invalid server environment variables')
-  }
-
-  // In dev/test, warn and provide best-effort values to keep dev server running
-  warnOnce('⚠️ Using fallback server env in non-production. Set SUPABASE_SECRET or SUPABASE_SERVICE_KEY to enable full functionality.')
-  // Create fallback object that matches schema transform output
-  const fallbackEnv = {
-    NODE_ENV: (process.env.NODE_ENV as 'development' | 'test' | 'production') || 'development',
-    SUPABASE_SECRET: process.env.SUPABASE_SERVICE_KEY || '',
-  }
-  // Apply same transform as schema to ensure type consistency
+  // Always return a valid object - these are optional
   return {
-    ...fallbackEnv,
-    SUPABASE_SERVICE_KEY: fallbackEnv.SUPABASE_SECRET,
+    NODE_ENV: (process.env.NODE_ENV as 'development' | 'test' | 'production') || 'development',
+    SUPABASE_SECRET: process.env.SUPABASE_SECRET,
+    SUPABASE_SERVICE_KEY: process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SECRET || '',
   }
 }
 
@@ -112,17 +100,18 @@ function validateClientEnv(): ClientEnv {
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   }
 
-  const input = {
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-    NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
-    NEXT_PUBLIC_APP_ENV: process.env.NEXT_PUBLIC_APP_ENV,
-    NEXT_PUBLIC_ENABLE_DEBUG_UI: process.env.NEXT_PUBLIC_ENABLE_DEBUG_UI,
-    NEXT_PUBLIC_ENABLE_MOCK_DATA: process.env.NEXT_PUBLIC_ENABLE_MOCK_DATA,
-    NEXT_PUBLIC_ENABLE_DB_HEALTH_CHECK: process.env.NEXT_PUBLIC_ENABLE_DB_HEALTH_CHECK,
-    NEXT_PUBLIC_DB_HEALTH_CHECK_INTERVAL_MS: process.env.NEXT_PUBLIC_DB_HEALTH_CHECK_INTERVAL_MS,
-    NEXT_PUBLIC_DB_HEALTH_CHECK_MAX_INTERVAL_MS: process.env.NEXT_PUBLIC_DB_HEALTH_CHECK_MAX_INTERVAL_MS,
-  }
+const input = {
+  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+  NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
+  NEXT_PUBLIC_APP_ENV: process.env.NEXT_PUBLIC_APP_ENV,
+  NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+  NEXT_PUBLIC_ENABLE_DEBUG_UI: process.env.NEXT_PUBLIC_ENABLE_DEBUG_UI,
+  NEXT_PUBLIC_ENABLE_MOCK_DATA: process.env.NEXT_PUBLIC_ENABLE_MOCK_DATA,
+  NEXT_PUBLIC_ENABLE_DB_HEALTH_CHECK: process.env.NEXT_PUBLIC_ENABLE_DB_HEALTH_CHECK,
+  NEXT_PUBLIC_DB_HEALTH_CHECK_INTERVAL_MS: process.env.NEXT_PUBLIC_DB_HEALTH_CHECK_INTERVAL_MS,
+  NEXT_PUBLIC_DB_HEALTH_CHECK_MAX_INTERVAL_MS: process.env.NEXT_PUBLIC_DB_HEALTH_CHECK_MAX_INTERVAL_MS,
+}
   const result = clientEnvSchema.safeParse(input)
   if (result.success) return result.data
 

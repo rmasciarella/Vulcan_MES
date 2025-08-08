@@ -165,6 +165,10 @@ async def get_async_primary_db() -> AsyncGenerator[AsyncSession, None]:
             raise
 
 
+# Alias for backward compatibility
+async_session = get_async_primary_db
+
+
 async def get_async_read_db() -> AsyncGenerator[AsyncSession, None]:
     """Get async read replica database session for read-only operations."""
     async with AsyncReadReplicaSessionLocal() as session:

@@ -144,11 +144,11 @@ class Machine(Entity):
     )
 
     # Capabilities and requirements (managed as collections)
-    _capabilities: dict[UUID, MachineCapability] = Field(default_factory=dict)
-    _required_skills: dict[UUID, RequiredSkill] = Field(default_factory=dict)
+    capabilities: dict[UUID, MachineCapability] = Field(default_factory=dict)
+    required_skills: dict[UUID, RequiredSkill] = Field(default_factory=dict)
 
     # Maintenance and availability
-    _maintenance_windows: list[TimeWindow] = Field(default_factory=list)
+    maintenance_windows: list[TimeWindow] = Field(default_factory=list)
 
     @validator("machine_code")
     def validate_machine_code(cls, v):
@@ -192,7 +192,7 @@ class Machine(Entity):
             True if machine is in maintenance
         """
         check_time = at_time or datetime.utcnow()
-        return any(window.contains(check_time) for window in self._maintenance_windows)
+        return any(window.contains(check_time) for window in self.maintenance_windows)
 
     def can_perform_operation(self, operation_id: UUID) -> bool:
         """
@@ -204,13 +204,13 @@ class Machine(Entity):
         Returns:
             True if machine has capability for this operation
         """
-        return operation_id in self._capabilities
+        return operation_id in self.capabilities
 
     def get_capability_for_operation(
         self, operation_id: UUID
     ) -> MachineCapability | None:
         """Get machine capability for a specific operation."""
-        return self._capabilities.get(operation_id)
+        return self.capabilities.get(operation_id)
 
     def add_capability(self, capability: MachineCapability) -> None:
         """
@@ -228,13 +228,13 @@ class Machine(Entity):
                 "Capability machine_id must match machine ID",
             )
 
-        if capability.operation_id in self._capabilities:
+        if capability.operation_id in self.capabilities:
             raise BusinessRuleViolation(
                 "DUPLICATE_CAPABILITY",
                 f"Machine {self.machine_code} already has capability for operation {capability.operation_id}",
             )
 
-        self._capabilities[capability.operation_id] = capability
+        self.capabilities[capability.operation_id] = capability
         self.mark_updated()
 
     def remove_capability(self, operation_id: UUID) -> None:
@@ -244,8 +244,8 @@ class Machine(Entity):
         Args:
             operation_id: ID of the operation capability to remove
         """
-        if operation_id in self._capabilities:
-            del self._capabilities[operation_id]
+        if operation_id in self.capabilities:
+            del self.capabilities[operation_id]
             self.mark_updated()
 
     def add_required_skill(self, required_skill: RequiredSkill) -> None:
@@ -265,13 +265,13 @@ class Machine(Entity):
             )
 
         skill_id = UUID(str(required_skill.skill.skill_code))  # Use skill code as UUID
-        if skill_id in self._required_skills:
+        if skill_id in self.required_skills:
             raise BusinessRuleViolation(
                 "DUPLICATE_SKILL_REQUIREMENT",
                 f"Machine {self.machine_code} already requires skill {required_skill.skill.skill_code}",
             )
 
-        self._required_skills[skill_id] = required_skill
+        self.required_skills[skill_id] = required_skill
         self.mark_updated()
 
     def remove_required_skill(self, skill_code: str) -> None:
@@ -282,8 +282,8 @@ class Machine(Entity):
             skill_code: Code of the skill requirement to remove
         """
         skill_id = UUID(str(skill_code))
-        if skill_id in self._required_skills:
-            del self._required_skills[skill_id]
+        if skill_id in self.required_skills:
+            del self.required_skills[skill_id]
             self.mark_updated()
 
     def operator_can_operate(self, operator_skills: list[OperatorSkill]) -> bool:
@@ -297,11 +297,11 @@ class Machine(Entity):
             True if operator meets all skill requirements
         """
         # If no skills required, anyone can operate
-        if not self._required_skills:
+        if not self.required_skills:
             return True
 
         # Check each required skill
-        for required_skill in self._required_skills.values():
+        for required_skill in self.required_skills.values():
             skill_satisfied = any(
                 required_skill.is_satisfied_by(operator_skill)
                 for operator_skill in operator_skills
@@ -371,14 +371,14 @@ class Machine(Entity):
             BusinessRuleViolation: If maintenance window conflicts
         """
         # Check for conflicts with existing maintenance
-        for existing_window in self._maintenance_windows:
+        for existing_window in self.maintenance_windows:
             if maintenance_window.overlaps_with(existing_window):
                 raise BusinessRuleViolation(
                     "MAINTENANCE_CONFLICT",
                     "Maintenance window conflicts with existing maintenance",
                 )
 
-        self._maintenance_windows.append(maintenance_window)
+        self.maintenance_windows.append(maintenance_window)
         self.mark_updated()
 
     def cancel_maintenance(self, maintenance_start: datetime) -> None:
@@ -388,9 +388,9 @@ class Machine(Entity):
         Args:
             maintenance_start: Start time of maintenance to cancel
         """
-        self._maintenance_windows = [
+        self.maintenance_windows = [
             window
-            for window in self._maintenance_windows
+            for window in self.maintenance_windows
             if window.start_time != maintenance_start
         ]
         self.mark_updated()
@@ -410,7 +410,7 @@ class Machine(Entity):
             return datetime(2099, 12, 31)
 
         # Check maintenance windows
-        for window in self._maintenance_windows:
+        for window in self.maintenance_windows:
             if window.start_time > after and after < window.end_time:
                 after = window.end_time
 
@@ -437,10 +437,10 @@ class Machine(Entity):
             "automation_level": self.automation_level.value,
             "efficiency_percentage": self.efficiency_factor.percentage,
             "is_bottleneck": self.is_bottleneck,
-            "capabilities_count": len(self._capabilities),
-            "required_skills_count": len(self._required_skills),
+            "capabilities_count": len(self.capabilities),
+            "required_skills_count": len(self.required_skills),
             "is_available_for_work": self.is_available_for_work,
-            "maintenance_windows": len(self._maintenance_windows),
+            "maintenance_windows": len(self.maintenance_windows),
         }
 
     @staticmethod

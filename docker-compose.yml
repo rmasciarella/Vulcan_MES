@@ -47,7 +47,8 @@ services:
         condition: service_healthy
     volumes:
       - ./apps/backend:/app
-    command: fastapi dev app/main.py --host 0.0.0.0 --reload
+      - ./scripts:/app/scripts:ro
+    command: fastapi dev app/main.py --host ******* --reload
 
   frontend:
     build:

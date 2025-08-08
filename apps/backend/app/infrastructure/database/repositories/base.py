@@ -13,7 +13,7 @@ from uuid import UUID
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlmodel import Session, SQLModel, select
 
-from app.shared.base import DomainException
+from app.domain.shared.exceptions import DomainError
 
 # Type variables for generic repository
 EntityType = TypeVar("EntityType", bound=SQLModel)
@@ -21,7 +21,7 @@ CreateType = TypeVar("CreateType", bound=SQLModel)
 UpdateType = TypeVar("UpdateType", bound=SQLModel)
 
 
-class RepositoryException(DomainException):
+class RepositoryException(DomainError):
     """Base exception for repository layer errors."""
 
     pass

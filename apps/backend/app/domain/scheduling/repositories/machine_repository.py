@@ -7,7 +7,8 @@ Defines the contract for machine data access operations.
 from abc import ABC, abstractmethod
 from uuid import UUID
 
-from ..entities.machine import Machine, MachineStatus, MachineType
+from ..entities.machine import Machine
+from ..value_objects.enums import MachineStatus
 
 
 class MachineRepository(ABC):
@@ -79,21 +80,7 @@ class MachineRepository(ABC):
         """
         pass
 
-    @abstractmethod
-    async def get_by_machine_type(self, machine_type: MachineType) -> list[Machine]:
-        """
-        Retrieve machines of specific type.
-
-        Args:
-            machine_type: Machine type to filter by
-
-        Returns:
-            List of machines of the type
-
-        Raises:
-            RepositoryError: If retrieval operation fails
-        """
-        pass
+    # Method removed: MachineType is not defined in the domain model
 
     @abstractmethod
     async def get_available_machines(self) -> list[Machine]:
@@ -324,18 +311,4 @@ class MachineRepository(ABC):
         """
         pass
 
-    @abstractmethod
-    async def count_by_type(self, machine_type: MachineType) -> int:
-        """
-        Count machines by type.
-
-        Args:
-            machine_type: Machine type to count
-
-        Returns:
-            Machine count for the type
-
-        Raises:
-            RepositoryError: If count operation fails
-        """
-        pass
+    # Method removed: MachineType is not defined in the domain model

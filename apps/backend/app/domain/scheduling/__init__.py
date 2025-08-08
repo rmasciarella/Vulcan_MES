@@ -12,16 +12,14 @@ separation between domain logic and infrastructure concerns.
 from .entities import (
     Job,
     Machine,
-    MachineStatus,
-    MachineType,
     Operator,
-    OperatorStatus,
-    Schedule,
-    ScheduleAssignment,
-    ScheduleStatus,
     Task,
+)
+
+from .value_objects.enums import (
+    MachineStatus,
+    OperatorStatus,
     TaskStatus,
-    TaskType,
 )
 
 # Repository Interfaces
@@ -51,28 +49,22 @@ from .services import (
 )
 
 # Value Objects
-from .value_objects import Cost, Duration, Skill, SkillRequirement, TimeWindow
+from .value_objects import Duration, Money, Skill, TimeWindow
 
 __all__ = [
     # Entities
     "Job",
     "Task",
     "TaskStatus",
-    "TaskType",
     "Operator",
     "OperatorStatus",
     "Machine",
     "MachineStatus",
-    "MachineType",
-    "Schedule",
-    "ScheduleStatus",
-    "ScheduleAssignment",
     # Value Objects
     "Duration",
     "TimeWindow",
     "Skill",
-    "SkillRequirement",
-    "Cost",
+    "Money",
     # Repository Interfaces
     "JobRepository",
     "TaskRepository",

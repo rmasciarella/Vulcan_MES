@@ -6,6 +6,7 @@ services:
       target: development
     volumes:
       - ./apps/backend:/app
+      - ./scripts:/app/scripts:ro
       - /app/.venv
     environment:
       DEBUG: "true"

@@ -35,7 +35,10 @@ class Settings(BaseSettings):
     SECRET_KEY: str = secrets.token_urlsafe(32)
     # 60 minutes * 24 hours * 8 days = 8 days
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
+    # Local dev default. In production, set FRONTEND_URL to your Netlify domain.
     FRONTEND_HOST: str = "http://localhost:5173"
+    # Optional explicit production frontend URL (e.g., https://your-app.netlify.app)
+    FRONTEND_URL: str | None = None
     ENVIRONMENT: Literal["local", "staging", "production"] = "local"
 
     # Feature flags
@@ -57,9 +60,22 @@ class Settings(BaseSettings):
     @computed_field  # type: ignore[prop-decorator]
     @property
     def all_cors_origins(self) -> list[str]:
-        return [str(origin).rstrip("/") for origin in self.BACKEND_CORS_ORIGINS] + [
-            self.FRONTEND_HOST
-        ]
+        # Start with explicit BACKEND_CORS_ORIGINS
+        origins: list[str] = [str(origin).rstrip("/") for origin in self.BACKEND_CORS_ORIGINS]
+        # Always include local FRONTEND_HOST (useful for dev)
+        if self.FRONTEND_HOST:
+            origins.append(str(self.FRONTEND_HOST).rstrip("/"))
+        # Include FRONTEND_URL if provided (e.g., Netlify production domain)
+        if self.FRONTEND_URL:
+            origins.append(str(self.FRONTEND_URL).rstrip("/"))
+        # De-duplicate while preserving order
+        deduped: list[str] = []
+        seen: set[str] = set()
+        for o in origins:
+            if o not in seen:
+                seen.add(o)
+                deduped.append(o)
+        return deduped
 
     PROJECT_NAME: str
     SENTRY_DSN: HttpUrl | None = None
@@ -249,6 +265,11 @@ class Settings(BaseSettings):
     ENABLE_REQUEST_PROFILING: bool = False
     REQUEST_PROFILING_SAMPLE_RATE: float = 0.1  # 10% of requests
 
+    # Circuit Breaker Settings
+    CIRCUIT_BREAKER_FAILURE_THRESHOLD: int = 5
+    CIRCUIT_BREAKER_RECOVERY_TIMEOUT: int = 60
+    CIRCUIT_BREAKER_EXPECTED_EXCEPTION: str = "Exception"
+    
     # Application Performance Settings
     ENABLE_RESPONSE_COMPRESSION: bool = True
     COMPRESSION_MINIMUM_SIZE: int = 500  # bytes

@@ -142,8 +142,8 @@ class Job(AggregateRoot):
         return v
 
     # Task coordination (managed internally)
-    _tasks: dict[int, "Task"] = Field(default_factory=dict)  # sequence -> Task
-    _task_dependencies: dict[UUID, list[UUID]] = Field(
+    tasks: dict[int, "Task"] = Field(default_factory=dict)  # sequence -> Task
+    task_dependencies: dict[UUID, list[UUID]] = Field(
         default_factory=dict
     )  # task_id -> [prerequisite_ids]
 
@@ -212,7 +212,7 @@ class Job(AggregateRoot):
     @property
     def task_count(self) -> int:
         """Get total number of tasks."""
-        return len(self._tasks)
+        return len(self.tasks)
 
     @property
     def completed_task_count(self) -> int:
@@ -220,7 +220,7 @@ class Job(AggregateRoot):
         return len(
             [
                 task
-                for task in self._tasks.values()
+                for task in self.tasks.values()
                 if task.status == TaskStatus.COMPLETED
             ]
         )
@@ -235,40 +235,40 @@ class Job(AggregateRoot):
     @property
     def estimated_duration(self) -> Duration | None:
         """Get estimated total duration based on tasks."""
-        if not self._tasks:
+        if not self.tasks:
             return None
 
         total_minutes = sum(
             (task.planned_duration or Duration(minutes=0)).minutes
             + (task.planned_setup_duration or Duration(minutes=0)).minutes
-            for task in self._tasks.values()
+            for task in self.tasks.values()
         )
         return Duration(minutes=total_minutes)
 
     @property
     def critical_path_tasks(self) -> list["Task"]:
         """Get tasks that are on the critical path."""
-        return [task for task in self._tasks.values() if task.is_critical_path]
+        return [task for task in self.tasks.values() if task.is_critical_path]
 
     def get_task_by_sequence(self, sequence: int) -> Optional["Task"]:
         """Get task by sequence number."""
-        return self._tasks.get(sequence)
+        return self.tasks.get(sequence)
 
     def get_all_tasks(self) -> list["Task"]:
         """Get all tasks sorted by sequence."""
-        return sorted(self._tasks.values(), key=lambda t: t.sequence_in_job)
+        return sorted(self.tasks.values(), key=lambda t: t.sequence_in_job)
 
     def get_ready_tasks(self) -> list["Task"]:
         """Get tasks that are ready to be scheduled."""
         return [
-            task for task in self._tasks.values() if task.status == TaskStatus.READY
+            task for task in self.tasks.values() if task.status == TaskStatus.READY
         ]
 
     def get_active_tasks(self) -> list["Task"]:
         """Get tasks that are currently active."""
         return [
             task
-            for task in self._tasks.values()
+            for task in self.tasks.values()
             if task.status in {TaskStatus.SCHEDULED, TaskStatus.IN_PROGRESS}
         ]
 
@@ -292,13 +292,13 @@ class Job(AggregateRoot):
                 "TASK_JOB_MISMATCH", "Task job_id must match this job's ID"
             )
 
-        if task.sequence_in_job in self._tasks:
+        if task.sequence_in_job in self.tasks:
             raise BusinessRuleViolation(
                 "DUPLICATE_TASK_SEQUENCE",
                 f"Task sequence {task.sequence_in_job} already exists in job {self.job_number}",
             )
 
-        self._tasks[task.sequence_in_job] = task
+        self.tasks[task.sequence_in_job] = task
 
         # First task can be ready immediately
         if task.sequence_in_job == 1 and task.status == TaskStatus.PENDING:
@@ -316,7 +316,7 @@ class Job(AggregateRoot):
         Raises:
             BusinessRuleViolation: If task is in progress or doesn't exist
         """
-        task = self._tasks.get(sequence)
+        task = self.tasks.get(sequence)
         if not task:
             raise BusinessRuleViolation(
                 "TASK_NOT_FOUND",
@@ -329,7 +329,7 @@ class Job(AggregateRoot):
                 f"Cannot remove task {sequence} while it's in progress",
             )
 
-        del self._tasks[sequence]
+        del self.tasks[sequence]
         self.mark_updated()
 
     def complete_task(self, sequence: int, actual_end_time: datetime) -> None:
@@ -343,7 +343,7 @@ class Job(AggregateRoot):
         Raises:
             BusinessRuleViolation: If task is not in progress
         """
-        task = self._tasks.get(sequence)
+        task = self.tasks.get(sequence)
         if not task:
             raise BusinessRuleViolation(
                 "TASK_NOT_FOUND",
@@ -367,12 +367,12 @@ class Job(AggregateRoot):
 
         # Check if job is complete (all tasks done or reached operation 100)
         if sequence == 100 or all(
-            task.status == TaskStatus.COMPLETED for task in self._tasks.values()
+            task.status == TaskStatus.COMPLETED for task in self.tasks.values()
         ):
             self._complete_job(actual_end_time)
         else:
             # Mark next task as ready if it exists
-            next_task = self._tasks.get(sequence + 1)
+            next_task = self.tasks.get(sequence + 1)
             if next_task and next_task.status == TaskStatus.PENDING:
                 next_task.mark_ready()
 

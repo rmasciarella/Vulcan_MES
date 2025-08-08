@@ -43,6 +43,7 @@ dependencies = [
     "gotrue>=2.11.0",
     "storage3>=0.8.1",
     "realtime>=2.0.6",
+    "psycopg2-binary>=2.9.10",
 ]
 
 [tool.uv]

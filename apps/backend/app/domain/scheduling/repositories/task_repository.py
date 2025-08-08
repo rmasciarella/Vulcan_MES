@@ -7,7 +7,8 @@ Defines the contract for task data access operations.
 from abc import ABC, abstractmethod
 from uuid import UUID
 
-from ..entities.task import Task, TaskStatus, TaskType
+from ..entities.task import Task
+from ..value_objects.enums import TaskStatus
 
 
 class TaskRepository(ABC):
@@ -95,21 +96,7 @@ class TaskRepository(ABC):
         """
         pass
 
-    @abstractmethod
-    async def get_by_task_type(self, task_type: TaskType) -> list[Task]:
-        """
-        Retrieve tasks of specific type.
-
-        Args:
-            task_type: Task type to filter by
-
-        Returns:
-            List of tasks of the type
-
-        Raises:
-            RepositoryError: If retrieval operation fails
-        """
-        pass
+    # Method removed: TaskType is not defined in the domain model
 
     @abstractmethod
     async def get_by_machine_id(self, machine_id: UUID) -> list[Task]:

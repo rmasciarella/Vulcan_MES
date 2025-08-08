@@ -72,10 +72,10 @@ class Operator(Entity):
     default_working_hours: WorkingHours = Field(default_factory=WorkingHours)
 
     # Skills (managed as collection)
-    _skills: dict[str, OperatorSkill] = Field(default_factory=dict)
+    skills: dict[str, OperatorSkill] = Field(default_factory=dict)
 
     # Availability overrides (date -> availability info)
-    _availability_overrides: dict[date, "AvailabilityOverride"] = Field(
+    availability_overrides: dict[date, "AvailabilityOverride"] = Field(
         default_factory=dict
     )
 
@@ -112,17 +112,17 @@ class Operator(Entity):
     @property
     def skill_count(self) -> int:
         """Get number of skills this operator has."""
-        return len([skill for skill in self._skills.values() if skill.is_valid])
+        return len([skill for skill in self.skills.values() if skill.is_valid])
 
     @property
-    def active_skills(self) -> list[OperatorSkill]:
+    def activeskills(self) -> list[OperatorSkill]:
         """Get list of active (non-expired) skills."""
-        return [skill for skill in self._skills.values() if skill.is_valid]
+        return [skill for skill in self.skills.values() if skill.is_valid]
 
     @property
-    def expiring_skills(self) -> list[OperatorSkill]:
+    def expiringskills(self) -> list[OperatorSkill]:
         """Get list of skills that are expiring soon."""
-        return [skill for skill in self._skills.values() if skill.is_expiring_soon]
+        return [skill for skill in self.skills.values() if skill.is_expiring_soon]
 
     def has_skill(self, skill_code: str) -> bool:
         """
@@ -134,12 +134,12 @@ class Operator(Entity):
         Returns:
             True if operator has the skill and it's valid
         """
-        skill = self._skills.get(skill_code)
+        skill = self.skills.get(skill_code)
         return skill is not None and skill.is_valid
 
     def get_skill(self, skill_code: str) -> OperatorSkill | None:
         """Get operator's skill by code."""
-        return self._skills.get(skill_code)
+        return self.skills.get(skill_code)
 
     def add_skill(self, skill: OperatorSkill) -> None:
         """
@@ -151,13 +151,13 @@ class Operator(Entity):
         Raises:
             BusinessRuleViolation: If skill already exists
         """
-        if skill.skill.skill_code in self._skills:
+        if skill.skill.skill_code in self.skills:
             raise BusinessRuleViolation(
                 "DUPLICATE_SKILL",
                 f"Operator {self.employee_id} already has skill {skill.skill.skill_code}",
             )
 
-        self._skills[skill.skill.skill_code] = skill
+        self.skills[skill.skill.skill_code] = skill
         self.mark_updated()
 
     def update_skill(self, skill: OperatorSkill) -> None:
@@ -170,13 +170,13 @@ class Operator(Entity):
         Raises:
             BusinessRuleViolation: If skill doesn't exist
         """
-        if skill.skill.skill_code not in self._skills:
+        if skill.skill.skill_code not in self.skills:
             raise BusinessRuleViolation(
                 "SKILL_NOT_FOUND",
                 f"Operator {self.employee_id} doesn't have skill {skill.skill.skill_code}",
             )
 
-        self._skills[skill.skill.skill_code] = skill
+        self.skills[skill.skill.skill_code] = skill
         self.mark_updated()
 
     def remove_skill(self, skill_code: str) -> None:
@@ -186,8 +186,8 @@ class Operator(Entity):
         Args:
             skill_code: Code of the skill to remove
         """
-        if skill_code in self._skills:
-            del self._skills[skill_code]
+        if skill_code in self.skills:
+            del self.skills[skill_code]
             self.mark_updated()
 
     def is_available_during(self, start_time: datetime, end_time: datetime) -> bool:
@@ -220,7 +220,7 @@ class Operator(Entity):
     ) -> bool:
         """Check if operator is available on a specific date."""
         # Get working hours for this date (override or default)
-        availability = self._availability_overrides.get(check_date)
+        availability = self.availability_overrides.get(check_date)
         if availability and not availability.is_available:
             return False
 
@@ -264,18 +264,18 @@ class Operator(Entity):
             reason=reason,
         )
 
-        self._availability_overrides[override_date] = override
+        self.availability_overrides[override_date] = override
         self.mark_updated()
 
     def remove_availability_override(self, override_date: date) -> None:
         """Remove availability override for a specific date."""
-        if override_date in self._availability_overrides:
-            del self._availability_overrides[override_date]
+        if override_date in self.availability_overrides:
+            del self.availability_overrides[override_date]
             self.mark_updated()
 
     def get_availability_for_date(self, check_date: date) -> "AvailabilityInfo":
         """Get availability information for a specific date."""
-        override = self._availability_overrides.get(check_date)
+        override = self.availability_overrides.get(check_date)
 
         if override:
             return AvailabilityInfo(
@@ -324,7 +324,7 @@ class Operator(Entity):
 
     def check_skill_expirations(self) -> None:
         """Check for expiring skills and raise events."""
-        for skill in self.expiring_skills:
+        for skill in self.expiringskills:
             if skill.expiry_date:
                 days_until_expiry = (
                     skill.expiry_date.date() - datetime.utcnow().date()
@@ -371,11 +371,11 @@ class Operator(Entity):
             "status": self.status.value,
             "is_active": self.is_active,
             "skill_count": self.skill_count,
-            "active_skills": len(self.active_skills),
-            "expiring_skills": len(self.expiring_skills),
+            "activeskills": len(self.activeskills),
+            "expiringskills": len(self.expiringskills),
             "default_shift": f"{self.default_working_hours.start_time} - {self.default_working_hours.end_time}",
             "is_available_for_work": self.is_available_for_work,
-            "availability_overrides": len(self._availability_overrides),
+            "availability_overrides": len(self.availability_overrides),
         }
 
     @staticmethod

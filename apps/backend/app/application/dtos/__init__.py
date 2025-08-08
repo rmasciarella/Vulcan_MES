@@ -14,15 +14,9 @@ from .job_dtos import (
 )
 from .scheduling_dtos import (
     CreateScheduleRequest,
-    OptimizationRequest,
-    OptimizationResponse,
+    OptimizeScheduleRequest,
+    OptimizationStatusResponse,
     ScheduleResponse,
-)
-from .task_dtos import (
-    CreateTaskRequest,
-    TaskResponse,
-    TaskSummaryResponse,
-    UpdateTaskRequest,
 )
 
 __all__ = [
@@ -31,14 +25,9 @@ __all__ = [
     "UpdateJobRequest",
     "JobResponse",
     "JobSummaryResponse",
-    # Task DTOs
-    "CreateTaskRequest",
-    "UpdateTaskRequest",
-    "TaskResponse",
-    "TaskSummaryResponse",
     # Scheduling DTOs
     "CreateScheduleRequest",
     "ScheduleResponse",
-    "OptimizationRequest",
-    "OptimizationResponse",
+    "OptimizeScheduleRequest",
+    "OptimizationStatusResponse",
 ]

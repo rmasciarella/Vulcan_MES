@@ -1,9 +1,9 @@
 """Task entity for individual work assignments and resource management."""
 
 from datetime import datetime
-from uuid import UUID
+from uuid import UUID, uuid4
 
-from pydantic import Field, validator
+from pydantic import BaseModel, Field, validator
 
 from ...shared.base import BusinessRuleViolation, Entity
 from ...shared.validation import (
@@ -24,9 +24,15 @@ from ..value_objects.skill_proficiency import SkillRequirement
 from ..value_objects.role_requirement import AttendanceRequirement, RoleRequirement
 
 
-class OperatorAssignment(Entity):
+class OperatorAssignment(BaseModel):
     """Represents an operator assignment to a task."""
-
+    
+    # Identity fields
+    id: UUID = Field(default_factory=uuid4)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime | None = None
+    
+    # Required assignment fields
     task_id: UUID
     operator_id: UUID
     assignment_type: AssignmentType
@@ -38,6 +44,10 @@ class OperatorAssignment(Entity):
     def is_valid(self) -> bool:
         """Validate business rules."""
         return bool(self.task_id and self.operator_id)
+    
+    def mark_updated(self) -> None:
+        """Mark the entity as updated."""
+        self.updated_at = datetime.utcnow()
 
     @property
     def is_active(self) -> bool:
@@ -170,7 +180,7 @@ class Task(Entity):
         return v
 
     # Operator assignments (managed internally)
-    _operator_assignments: dict[UUID, OperatorAssignment] = Field(default_factory=dict)
+    operator_assignments: dict[UUID, OperatorAssignment] = Field(default_factory=dict)
 
     @validator("sequence_in_job")
     def validate_sequence(cls, v):
@@ -236,9 +246,9 @@ class Task(Entity):
         return self.assigned_machine_id is not None
 
     @property
-    def has_operator_assignments(self) -> bool:
+    def hasoperator_assignments(self) -> bool:
         """Check if task has operator assignments."""
-        return len(self._operator_assignments) > 0
+        return len(self.operator_assignments) > 0
 
     def get_machine_option_for(self, machine_id: UUID) -> MachineOption | None:
         """Return the machine option matching a specific machine id, if present."""
@@ -270,11 +280,11 @@ class Task(Entity):
         return int(option.setup_duration.minutes)
 
     @property
-    def active_operator_assignments(self) -> list[OperatorAssignment]:
+    def activeoperator_assignments(self) -> list[OperatorAssignment]:
         """Get currently active operator assignments."""
         return [
             assignment
-            for assignment in self._operator_assignments.values()
+            for assignment in self.operator_assignments.values()
             if assignment.is_active
         ]
 
@@ -386,7 +396,7 @@ class Task(Entity):
                     operation_sequence=self.sequence_in_job,
                     old_machine_id=old_machine,
                     new_machine_id=machine_id,
-                    operator_assignments=list(self._operator_assignments.keys()),
+                    operator_assignments=list(self.operator_assignments.keys()),
                     reason="task_scheduled",
                 )
             )
@@ -411,7 +421,7 @@ class Task(Entity):
         self._change_status(TaskStatus.IN_PROGRESS, "task_started")
 
         # Start all operator assignments
-        for assignment in self._operator_assignments.values():
+        for assignment in self.operator_assignments.values():
             if assignment.assignment_type == AssignmentType.FULL_DURATION:
                 assignment.start_assignment(self.actual_start_time)
 
@@ -451,7 +461,7 @@ class Task(Entity):
         self._change_status(TaskStatus.COMPLETED, "task_completed")
 
         # Complete all active operator assignments
-        for assignment in self.active_operator_assignments:
+        for assignment in self.activeoperator_assignments:
             assignment.complete_assignment(completion_time)
 
     def fail(self, reason: str, failure_time: datetime | None = None) -> None:
@@ -506,13 +516,13 @@ class Task(Entity):
                 "Assignment task_id must match this task's ID",
             )
 
-        if assignment.operator_id in self._operator_assignments:
+        if assignment.operator_id in self.operator_assignments:
             raise BusinessRuleViolation(
                 "DUPLICATE_OPERATOR_ASSIGNMENT",
                 f"Operator {assignment.operator_id} is already assigned to this task",
             )
 
-        self._operator_assignments[assignment.operator_id] = assignment
+        self.operator_assignments[assignment.operator_id] = assignment
         self.mark_updated()
 
     def remove_operator_assignment(self, operator_id: UUID) -> None:
@@ -525,7 +535,7 @@ class Task(Entity):
         Raises:
             BusinessRuleViolation: If operator is actively working
         """
-        assignment = self._operator_assignments.get(operator_id)
+        assignment = self.operator_assignments.get(operator_id)
         if not assignment:
             return  # Assignment doesn't exist
 
@@ -535,7 +545,7 @@ class Task(Entity):
                 f"Cannot remove operator {operator_id} while actively working on task",
             )
 
-        del self._operator_assignments[operator_id]
+        del self.operator_assignments[operator_id]
         self.mark_updated()
 
     def record_rework(self, reason: str) -> None:
@@ -649,8 +659,8 @@ class Task(Entity):
             "delay_minutes": self.delay_minutes,
             "rework_count": self.rework_count,
             "has_machine": self.requires_machine,
-            "operator_count": len(self._operator_assignments),
-            "active_operators": len(self.active_operator_assignments),
+            "operator_count": len(self.operator_assignments),
+            "active_operators": len(self.activeoperator_assignments),
             "planned_start": self.planned_start_time.isoformat()
             if self.planned_start_time
             else None,
