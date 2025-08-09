@@ -149,6 +149,9 @@ class Task(TaskBase, IdentifiedModel, table=True):
     operator_assignments: list["OperatorAssignment"] = Relationship(
         back_populates="task", cascade_delete=True
     )
+    skill_requirements: list["TaskSkillRequirement"] = Relationship(
+        back_populates="task", cascade_delete=True
+    )
 
 
 class TaskCreate(TaskBase):
@@ -355,6 +358,27 @@ class MachineSkillRequirement(
 
     # Relationships
     machine: Machine | None = Relationship(back_populates="skill_requirements")
+    skill_type: SkillType | None = Relationship()
+
+
+class TaskSkillRequirementBase(SQLModel):
+    """Base TaskSkillRequirement model."""
+
+    task_id: UUID = Field(foreign_key="tasks.id", primary_key=True)
+    skill_type_id: UUID = Field(foreign_key="skill_types.id", primary_key=True)
+    minimum_level: SkillLevel = Field(default=SkillLevel.LEVEL_1)
+    is_required: bool = Field(default=True)
+
+
+class TaskSkillRequirement(
+    TaskSkillRequirementBase, TimestampedModel, table=True
+):
+    """Task skill requirement table definition."""
+
+    __tablename__ = "task_skill_requirements"
+
+    # Relationships
+    task: Task | None = Relationship(back_populates="skill_requirements")
     skill_type: SkillType | None = Relationship()
 
 
@@ -591,3 +615,96 @@ class ScheduleAssignmentPublic(ScheduleAssignmentBase, IdentifiedModel):
     job_number: str | None = None
     machine_name: str | None = None
     operator_names: list[str] = Field(default_factory=list)
+
+
+# Task Mode tables for OR-Tools optimization
+class TaskModeBase(SQLModel):
+    """Base TaskMode model with shared fields."""
+
+    task_id: UUID = Field(foreign_key="tasks.id", index=True)
+    mode_name: str = Field(min_length=1, max_length=100)
+    duration_minutes: int = Field(ge=0)
+    is_default: bool = Field(default=False)
+    cost_per_minute: float = Field(default=0.0, ge=0)
+    
+    notes: str | None = None
+
+
+class TaskMode(TaskModeBase, IdentifiedModel, table=True):
+    """Task mode table definition for scheduling optimization."""
+
+    __tablename__ = "task_modes"
+
+    # Relationships
+    task: Task | None = Relationship()
+    resource_requirements: list["TaskModeResourceRequirement"] = Relationship(
+        back_populates="task_mode", cascade_delete=True
+    )
+
+
+class TaskModeCreate(TaskModeBase):
+    """Task mode creation model."""
+
+    pass
+
+
+class TaskModeUpdate(SQLModel):
+    """Task mode update model."""
+
+    mode_name: str | None = None
+    duration_minutes: int | None = None
+    is_default: bool | None = None
+    cost_per_minute: float | None = None
+    notes: str | None = None
+
+
+class TaskModePublic(TaskModeBase, IdentifiedModel):
+    """Task mode public model for API responses."""
+
+    resource_requirement_count: int = 0
+
+
+# Task Mode Resource Requirements
+class TaskModeResourceRequirementBase(SQLModel):
+    """Base TaskModeResourceRequirement model."""
+
+    mode_id: UUID = Field(foreign_key="task_modes.id", primary_key=True)
+    skill_id: UUID = Field(foreign_key="skill_types.id", primary_key=True)
+    quantity_required: int = Field(default=1, ge=1)
+    skill_level: SkillLevel = Field(default=SkillLevel.LEVEL_2)
+    is_partial_consumption: bool = Field(default=False)
+
+
+class TaskModeResourceRequirement(
+    TaskModeResourceRequirementBase, TimestampedModel, table=True
+):
+    """Task mode resource requirement table definition."""
+
+    __tablename__ = "task_mode_resource_requirements"
+
+    # Relationships
+    task_mode: TaskMode | None = Relationship(back_populates="resource_requirements")
+    skill_type: SkillType | None = Relationship()
+
+
+class TaskModeResourceRequirementCreate(TaskModeResourceRequirementBase):
+    """Task mode resource requirement creation model."""
+
+    pass
+
+
+class TaskModeResourceRequirementUpdate(SQLModel):
+    """Task mode resource requirement update model."""
+
+    quantity_required: int | None = None
+    skill_level: SkillLevel | None = None
+    is_partial_consumption: bool | None = None
+
+
+class TaskModeResourceRequirementPublic(TaskModeResourceRequirementBase, TimestampedModel):
+    """Task mode resource requirement public model for API responses."""
+
+    skill_type_name: str | None = None
+    mode_name: str | None = None
+
+
