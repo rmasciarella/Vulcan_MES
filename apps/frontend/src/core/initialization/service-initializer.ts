@@ -1,4 +1,33 @@
-import { UseCaseFactory } from '@/core/use-cases/use-case-factory'
+// TODO: Temporarily stubbed - use case factory needs to be properly migrated to features
+// import { UseCaseFactory } from '@/core/use-cases/use-case-factory'
+
+// Temporary stub for UseCaseFactory
+class UseCaseFactoryStub {
+  static async initialize(client: SupabaseClient<Database>) {
+    console.warn('[ServiceInitializer] UseCaseFactory stub - no actual initialization')
+  }
+  
+  static getInstance() {
+    return {
+      getScheduleUseCases: async () => {
+        console.warn('[ServiceInitializer] Schedule use cases stub')
+      },
+      getOperatorUseCases: async () => {
+        console.warn('[ServiceInitializer] Operator use cases stub')
+      },
+      getMachineUseCases: async () => {
+        console.warn('[ServiceInitializer] Machine use cases stub')
+      }
+    }
+  }
+  
+  static reset() {
+    console.warn('[ServiceInitializer] UseCaseFactory reset stub')
+  }
+}
+
+const UseCaseFactory = UseCaseFactoryStub
+
 import { getSupabaseBrowserClient } from '@/infrastructure/supabase/browser-singleton'
 import { logger } from '@/shared/lib/logger'
 import type { SupabaseClient } from '@supabase/supabase-js'

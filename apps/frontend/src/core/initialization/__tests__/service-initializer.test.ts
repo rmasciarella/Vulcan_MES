@@ -2,7 +2,8 @@
  * Tests for ServiceInitializer idempotency and performance optimizations
  */
 import { ServiceInitializer } from '../service-initializer'
-import { UseCaseFactory } from '@/core/use-cases/use-case-factory'
+// TODO: Update test when use case factory is properly migrated
+// import { UseCaseFactory } from '@/core/use-cases/use-case-factory'
 
 // Mock the dependencies
 jest.mock('@/infrastructure/supabase/browser-singleton')

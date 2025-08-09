@@ -4,7 +4,8 @@
  */
 
 import { getManufacturingDataPipeline } from '@/infrastructure/supabase/config/data-pipeline-config'
-import { JobStatus } from '@/core/domains/jobs/value-objects'
+// TODO: Fix imports after migration
+// import { JobStatus } from '@/core/domains/jobs/value-objects'
 // import { TaskStatus, TaskId } from '@/core/domains/tasks/value-objects'
 
 /**

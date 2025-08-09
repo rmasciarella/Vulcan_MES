@@ -24,9 +24,6 @@
       "@/core/*": [
         "./src/core/*"
       ],
-      "@/core/domains/*": [
-        "../../packages/domain/src/*"
-      ],
       "@vulcan/domain": [
         "../../packages/domain/src/index.ts"
       ],

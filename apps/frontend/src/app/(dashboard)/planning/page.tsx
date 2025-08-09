@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
-import { JobsList } from './_components/jobs-list'
-import { TasksList } from './_components/tasks-list'
+import { JobsList } from '@/features/scheduling/components/jobs-list'
+import { TasksList } from '@/features/scheduling/components/tasks-list'
 import { ManufacturingLoadingState } from '@/shared/components/loading-states'
 
 export default function PlanningPage() {

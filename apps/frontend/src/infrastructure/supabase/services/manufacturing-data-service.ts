@@ -1,10 +1,8 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 import { Database } from '@/types/supabase'
-import { Job } from '@/core/domains/jobs/job'
-import { Task } from '@/core/domains/tasks/task'
-import { TaskMode } from '@/core/domains/tasks/entities/TaskMode'
-import { JobId, JobStatus } from '@/core/domains/jobs/value-objects'
-import { TaskStatus } from '@/core/domains/tasks/value-objects'
+// TODO: Import from features once properly migrated
+import type { Job, JobId, JobStatus } from '@/features/scheduling/types/jobs'
+import type { Task, TaskStatus, TaskMode } from '@/features/scheduling/types/tasks'
 import { SupabaseJobRepository } from '@/infrastructure/supabase/repositories/supabase-job-repository'
 import { SupabaseTaskRepository } from '@/infrastructure/supabase/repositories/supabase-task-repository'
 import { SupabaseTaskModeRepository } from '@/infrastructure/supabase/repositories/supabase-task-mode-repository'
