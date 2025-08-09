@@ -6,7 +6,7 @@ requires-python = ">=3.11,<4.0"
 dependencies = [
     "fastapi[standard]<1.0.0,>=0.114.2",
     "python-multipart<1.0.0,>=0.0.7",
-    "email-validator<3.0.0.0,>=2.1.0.post1",
+    "email-validator<3.0.0,>=2.1.0.post1",
     "passlib[bcrypt]<2.0.0,>=1.7.4",
     "tenacity<9.0.0,>=8.2.3",
     "pydantic>2.0",
@@ -44,6 +44,8 @@ dependencies = [
     "storage3>=0.8.1",
     "realtime>=2.0.6",
     "psycopg2-binary>=2.9.10",
+    # CSV import/export
+    "pandas>=2.2,<3.0",
 ]
 
 [tool.uv]
