@@ -26,8 +26,8 @@ def parse_cors(v: Any) -> list[str] | str:
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        # Use top level .env file (one level above ./backend/)
-        env_file="../.env",
+        # Use top level .env file (three levels above ./backend/app/)
+        env_file="../../../.env",
         env_ignore_empty=True,
         extra="ignore",
     )
@@ -77,13 +77,13 @@ class Settings(BaseSettings):
                 deduped.append(o)
         return deduped
 
-    PROJECT_NAME: str
+    PROJECT_NAME: str = "Vulcan MES"
     SENTRY_DSN: HttpUrl | None = None
-    POSTGRES_SERVER: str
+    POSTGRES_SERVER: str = "localhost"
     POSTGRES_PORT: int = 5432
-    POSTGRES_USER: str
-    POSTGRES_PASSWORD: str = ""
-    POSTGRES_DB: str = ""
+    POSTGRES_USER: str = "postgres"
+    POSTGRES_PASSWORD: str = "postgres"
+    POSTGRES_DB: str = "vulcan"
     # Supabase specific settings
     SUPABASE_URL: str | None = None
     SUPABASE_KEY: str | None = None
@@ -157,8 +157,8 @@ class Settings(BaseSettings):
         return bool(self.SMTP_HOST and self.EMAILS_FROM_EMAIL)
 
     EMAIL_TEST_USER: EmailStr = "test@example.com"
-    FIRST_SUPERUSER: EmailStr
-    FIRST_SUPERUSER_PASSWORD: str
+    FIRST_SUPERUSER: EmailStr = "admin@vulcan.com"
+    FIRST_SUPERUSER_PASSWORD: str = "changeme"
 
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":
