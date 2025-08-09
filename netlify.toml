@@ -18,12 +18,6 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Next.js routing on Netlify
-[[redirects]]
-  from = "/*"
-  to = "/.netlify/functions/___netlify-server-handler"
-  status = 200
-
 [[headers]]
   for = "/*"
   [headers.values]

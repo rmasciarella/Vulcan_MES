@@ -7,7 +7,6 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  outputFileTracing: true,
   typescript: {
     // !! WARN !!
     // Dangerously allow production builds to successfully complete even if

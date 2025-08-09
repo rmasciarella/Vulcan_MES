@@ -1,7 +1,52 @@
+# Netlify configuration
+# Docs: https://docs.netlify.com/configure-builds/file-based-configuration/
+# Monorepo: Next.js app in apps/frontend
+
 [build]
-  base = "apps/frontend"
+  # This file lives in apps/frontend, so use base = "."
+  base = "."
   command = "npm run build"
   publish = ".next"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+# Production context
+[context.production.environment]
+  NODE_ENV = "production"
+  # Example production env vars (set actual values in Netlify UI or CLI; do not commit secrets)
+  # NEXT_PUBLIC_API_URL = "https://api.myapp.com"
+  # SUPABASE_URL = "https://xyzcompany.supabase.co"
+  # SUPABASE_ANON_KEY = "{{SET_IN_NETLIFY_UI}}"
+
+# Deploy Previews (for PRs)
+[context.deploy-preview.environment]
+  NODE_ENV = "development"
+  NEXT_PUBLIC_ENV = "preview"
+  # Override with preview-specific values if different from production
+  # NEXT_PUBLIC_API_URL = "https://staging-api.myapp.com"
+
+# Branch Deploys (any non-production branch)
+[context.branch-deploy.environment]
+  NODE_ENV = "development"
+
+# Specific branch overrides
+[context."branch=develop".environment]
+  NEXT_PUBLIC_ENV = "develop"
+
+[context."branch=staging".environment]
+  NEXT_PUBLIC_ENV = "staging"
+
+# Optional cache headers example
+# [[headers]]
+#   for = "/_next/static/*"
+#   [headers.values]
+#     Cache-Control = "public, max-age=31536000, immutable"
+
+# API proxy to eliminate CORS by routing through Netlify
+# Replace the backend URL below with your actual API origin (no trailing slash)
+[[redirects]]
+  from = "/api/*"
+  to = "https://your-backend-url.com/api/:splat"
+  status = 200
+  force = true
