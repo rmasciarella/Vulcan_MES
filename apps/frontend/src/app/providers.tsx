@@ -11,7 +11,8 @@ const ReactQueryDevtools = process.env.NODE_ENV !== 'production'
 import { ErrorBoundary } from '@/shared/components/error-boundary'
 import { logger } from '@/shared/lib/logger'
 import { useEffect } from 'react'
-import { initializeJobEventHandlers, cleanupJobEventHandlers } from '@/core/use-cases/job-event-handlers'
+// TODO: Job event handlers moved to features/scheduling/api - import from there when implemented
+// import { initializeJobEventHandlers, cleanupJobEventHandlers } from '@/core/use-cases/job-event-handlers'
 import { initializeServices } from '@/core/initialization/service-initializer'
 
 function makeQueryClient() {
@@ -74,9 +75,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
         })
         servicesInitialized = true
         
-        // Initialize job event handlers after core services are ready
-        const eventHandlerResult = initializeJobEventHandlers(queryClient)
-        subscriptionIds = eventHandlerResult.subscriptionIds
+        // TODO: Initialize job event handlers after core services are ready
+        // const eventHandlerResult = initializeJobEventHandlers(queryClient)
+        // subscriptionIds = eventHandlerResult.subscriptionIds
         
         logger.debug('[Providers] All services initialized successfully')
       } catch (error) {
@@ -91,7 +92,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
     // Return cleanup function
     return () => {
       if (servicesInitialized && subscriptionIds.length > 0) {
-        cleanupJobEventHandlers(subscriptionIds)
+        // TODO: Cleanup job event handlers
+        // cleanupJobEventHandlers(subscriptionIds)
         logger.debug('[Providers] Services cleanup completed')
       }
     }

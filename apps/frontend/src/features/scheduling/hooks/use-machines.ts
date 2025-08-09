@@ -1,8 +1,21 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { Machine } from '@/core/types/database'
 import { useUIStore } from '@/core/stores/ui-store'
-import { UseCaseFactory } from '@/core/use-cases/use-case-factory'
-import type { MachinesListFilters, MachineAvailability } from '@/core/use-cases/machine-use-cases'
+
+// TODO: Temporarily simplified until machine use cases are properly migrated
+// Machine functionality needs to be implemented in features/resources or scheduling
+type MachinesListFilters = {
+  status?: string
+  type?: string
+  workCellId?: string
+}
+
+type MachineAvailability = {
+  id: string
+  start: Date
+  end: Date
+  available: boolean
+}
 
 // Enhanced query keys factory for better caching strategy
 export const machineKeys = {
@@ -20,32 +33,30 @@ export const machineKeys = {
   stats: () => [...machineKeys.all, 'stats'] as const,
 }
 
-// Fetch machines with comprehensive filtering using use cases
-async function fetchMachines(filters?: MachinesListFilters) {
-  const factory = UseCaseFactory.getInstance()
-  const machineUseCases = await factory.getMachineUseCases()
-  return await machineUseCases.getMachines(filters)
+// TODO: Implement proper API calls
+// These are temporary stubs until machine use cases are properly migrated
+async function fetchMachines(filters?: MachinesListFilters): Promise<Machine[]> {
+  // Temporary stub - implement proper API call
+  console.warn('Machine API not implemented - returning empty array')
+  return []
 }
 
-// Fetch single machine by ID using use cases
-async function fetchMachineById(id: string) {
-  const factory = UseCaseFactory.getInstance()
-  const machineUseCases = await factory.getMachineUseCases()
-  return await machineUseCases.getMachineById(id)
+async function fetchMachineById(id: string): Promise<Machine | null> {
+  // Temporary stub - implement proper API call
+  console.warn('Machine API not implemented - returning null')
+  return null
 }
 
-// Fetch machine availability using use cases
 async function fetchMachineAvailability(id: string, start: Date, end: Date): Promise<MachineAvailability[]> {
-  const factory = UseCaseFactory.getInstance()
-  const machineUseCases = await factory.getMachineUseCases()
-  return await machineUseCases.getMachineAvailability(id, start, end)
+  // Temporary stub - implement proper API call
+  console.warn('Machine availability API not implemented - returning empty array')
+  return []
 }
 
-// Update machine active status using use cases
-async function updateMachineActiveStatus({ id, isActive }: { id: string; isActive: boolean }) {
-  const factory = UseCaseFactory.getInstance()
-  const machineUseCases = await factory.getMachineUseCases()
-  return await machineUseCases.updateMachineActiveStatus(id, isActive)
+async function updateMachineActiveStatus({ id, isActive }: { id: string; isActive: boolean }): Promise<Machine> {
+  // Temporary stub - implement proper API call
+  console.warn('Machine update API not implemented')
+  throw new Error('Machine API not implemented')
 }
 
 // Enhanced hook to fetch machines list with comprehensive filtering
@@ -156,9 +167,9 @@ export function useMachinesByWorkCell(workCellId: string) {
   return useQuery({
     queryKey: machineKeys.byWorkCell(workCellId),
     queryFn: async () => {
-      const factory = UseCaseFactory.getInstance()
-      const machineUseCases = await factory.getMachineUseCases()
-      return await machineUseCases.getMachinesByWorkCell(workCellId)
+      // TODO: Implement proper API call
+      console.warn('Machine by work cell API not implemented')
+      return []
     },
     enabled: !!workCellId,
     staleTime: 60 * 1000,
@@ -169,9 +180,9 @@ export function useMachinesByType(machineType: string) {
   return useQuery({
     queryKey: machineKeys.byType(machineType),
     queryFn: async () => {
-      const factory = UseCaseFactory.getInstance()
-      const machineUseCases = await factory.getMachineUseCases()
-      return await machineUseCases.getMachinesByType(machineType)
+      // TODO: Implement proper API call
+      console.warn('Machine by type API not implemented')
+      return []
     },
     enabled: !!machineType,
     staleTime: 60 * 1000,
@@ -182,9 +193,9 @@ export function useActiveMachines() {
   return useQuery({
     queryKey: machineKeys.active(),
     queryFn: async () => {
-      const factory = UseCaseFactory.getInstance()
-      const machineUseCases = await factory.getMachineUseCases()
-      return await machineUseCases.getActiveMachines()
+      // TODO: Implement proper API call
+      console.warn('Active machines API not implemented')
+      return []
     },
     staleTime: 30 * 1000,
     refetchInterval: 60 * 1000, // Auto-refresh for production dashboard
@@ -195,9 +206,9 @@ export function useAvailableMachines() {
   return useQuery({
     queryKey: machineKeys.available(),
     queryFn: async () => {
-      const factory = UseCaseFactory.getInstance()
-      const machineUseCases = await factory.getMachineUseCases()
-      return await machineUseCases.getAvailableMachines()
+      // TODO: Implement proper API call
+      console.warn('Available machines API not implemented')
+      return []
     },
     staleTime: 30 * 1000,
     refetchInterval: 60 * 1000, // Auto-refresh for scheduling dashboard
@@ -208,9 +219,9 @@ export function useMachineStats() {
   return useQuery({
     queryKey: machineKeys.stats(),
     queryFn: async () => {
-      const factory = UseCaseFactory.getInstance()
-      const machineUseCases = await factory.getMachineUseCases()
-      return await machineUseCases.getMachineCount()
+      // TODO: Implement proper API call
+      console.warn('Machine stats API not implemented')
+      return { count: 0, active: 0, available: 0 }
     },
     staleTime: 5 * 60 * 1000, // 5 minutes for stats
     refetchInterval: 2 * 60 * 1000, // Auto-refresh every 2 minutes
@@ -231,9 +242,9 @@ export function useCreateMachine() {
       serialNumber?: string
       description?: string
     }) => {
-      const factory = UseCaseFactory.getInstance()
-      const machineUseCases = await factory.getMachineUseCases()
-      return await machineUseCases.createMachine(machineData)
+      // TODO: Implement proper API call
+      console.warn('Create machine API not implemented')
+      throw new Error('Machine API not implemented')
     },
     onSuccess: (newMachine) => {
       // Add to cache and invalidate lists
@@ -278,9 +289,9 @@ export function useDeleteMachine() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const factory = UseCaseFactory.getInstance()
-      const machineUseCases = await factory.getMachineUseCases()
-      return await machineUseCases.deleteMachine(id)
+      // TODO: Implement proper API call
+      console.warn('Delete machine API not implemented')
+      throw new Error('Machine API not implemented')
     },
     onSuccess: (_, deletedId) => {
       // Get machine data before removing to optimize invalidations
@@ -332,9 +343,9 @@ export function useUpdateMachineStatus() {
 
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: Machine['status'] }) => {
-      const factory = UseCaseFactory.getInstance()
-      const machineUseCases = await factory.getMachineUseCases()
-      return await machineUseCases.updateMachineStatus(id, status)
+      // TODO: Implement proper API call
+      console.warn('Update machine status API not implemented')
+      throw new Error('Machine API not implemented')
     },
     onSuccess: (data) => {
       // Update the specific machine in cache

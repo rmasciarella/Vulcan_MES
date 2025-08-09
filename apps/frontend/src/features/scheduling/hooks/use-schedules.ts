@@ -4,7 +4,7 @@ import type { SolvedSchedule, SolvedScheduleInsert, ScheduledTask } from '@/core
 import type { ScheduleFilters } from '@/infrastructure/supabase/repositories/supabase-schedule-repository'
 import { useUIStore } from '@/core/stores/ui-store'
 import { useSchedulingStore } from '@/core/stores/scheduling-store'
-import { UseCaseFactory } from '@/core/use-cases/use-case-factory'
+import { SchedulingUseCaseFactory } from '../api/use-case-factory'
 import { useEffect } from 'react'
 
 // Use SolvedSchedule as Schedule type alias for consistency
@@ -24,41 +24,33 @@ export const scheduleKeys = {
 
 // Fetch schedules with optional filters - now uses domain layer with DI
 async function fetchSchedules(filters?: ScheduleFilters): Promise<Schedule[]> {
-  const factory = UseCaseFactory.getInstance()
+  const factory = SchedulingUseCaseFactory.getInstance()
   const scheduleUseCases = await factory.getScheduleUseCases()
   const result = await scheduleUseCases.fetchSchedules(filters)
   return result as Schedule[]
 }
 
-// Fetch single schedule by ID - now uses domain layer with DI
+// TODO: Temporarily simplified until schedule use cases are properly migrated
 async function fetchScheduleById(id: string): Promise<Schedule | null> {
-  const factory = UseCaseFactory.getInstance()
-  const scheduleUseCases = await factory.getScheduleUseCases()
-  const result = await scheduleUseCases.fetchScheduleById(id)
-  
-  if (!result) {
-    throw new Error(`Schedule with ID ${id} not found`)
-  }
-  
-  return result as Schedule
+  console.warn('Schedule API not implemented - returning null')
+  return null
 }
 
-// Fetch tasks for a schedule - now uses domain layer with DI
+// TODO: Temporarily simplified until schedule use cases are properly migrated
 async function fetchScheduleTasks(scheduleId: string): Promise<ScheduledTask[]> {
-  const factory = UseCaseFactory.getInstance()
-  const scheduleUseCases = await factory.getScheduleUseCases()
-  return await scheduleUseCases.fetchScheduleTasks(scheduleId)
+  console.warn('Schedule tasks API not implemented - returning empty array')
+  return []
 }
 
 // Create a new schedule - now uses domain layer with DI
 async function createSchedule(schedule: SolvedScheduleInsert): Promise<Schedule> {
-  const factory = UseCaseFactory.getInstance()
+  const factory = SchedulingUseCaseFactory.getInstance()
   const scheduleUseCases = await factory.getScheduleUseCases()
   const result = await scheduleUseCases.createSchedule(schedule)
   return result as Schedule
 }
 
-// Update schedule solver status - now uses domain layer with DI
+// TODO: Temporarily simplified until schedule use cases are properly migrated
 async function updateScheduleSolverStatus({
   id,
   solverStatus,
@@ -66,13 +58,11 @@ async function updateScheduleSolverStatus({
   id: string
   solverStatus: string
 }): Promise<Schedule> {
-  const factory = UseCaseFactory.getInstance()
-  const scheduleUseCases = await factory.getScheduleUseCases()
-  const result = await scheduleUseCases.updateScheduleSolverStatus(id, solverStatus)
-  return result as Schedule
+  console.warn('Update schedule solver status API not implemented')
+  throw new Error('Schedule API not implemented')
 }
 
-// Save draft schedule to database - now uses domain layer with DI
+// TODO: Temporarily simplified until schedule use cases are properly migrated
 async function saveDraftSchedule({
   scheduleId,
   tasks,
@@ -80,9 +70,8 @@ async function saveDraftSchedule({
   scheduleId: string
   tasks: ScheduledTask[]
 }) {
-  const factory = UseCaseFactory.getInstance()
-  const scheduleUseCases = await factory.getScheduleUseCases()
-  return await scheduleUseCases.saveDraftSchedule(scheduleId, tasks)
+  console.warn('Save draft schedule API not implemented')
+  throw new Error('Schedule API not implemented')
 }
 
 // Enhanced hook to fetch schedules list with optional real-time updates
@@ -280,9 +269,8 @@ export function useDeleteSchedule() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const factory = UseCaseFactory.getInstance()
-      const scheduleUseCases = await factory.getScheduleUseCases()
-      return await scheduleUseCases.deleteSchedule(id)
+      console.warn('Delete schedule API not implemented')
+      throw new Error('Schedule API not implemented')
     },
     onSuccess: (_, deletedId) => {
       // Get schedule data before removing to optimize invalidations

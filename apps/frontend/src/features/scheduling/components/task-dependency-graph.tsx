@@ -19,7 +19,7 @@ import {
   Square,
   Diamond,
 } from 'lucide-react'
-import type { Task } from '@/core/domains/tasks'
+import type { Task } from '../types'
 // cn utility can be imported when needed
 
 interface TaskDependencyGraphProps {

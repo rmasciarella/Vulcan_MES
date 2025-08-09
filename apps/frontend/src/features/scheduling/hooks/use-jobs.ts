@@ -2,33 +2,11 @@ import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tansta
 import { useEffect } from 'react'
 import type { Tables } from '@/types/supabase'
 import { useUIStore } from '@/core/stores/ui-store'
-import { UseCaseFactory } from '@/core/use-cases/use-case-factory'
-// TODO: Realtime migration: expose domain-friendly subscription API via UseCaseFactory. Avoid direct Supabase imports here.
-// import type { Job } from '@/core/domains/jobs'
-// import { JobStatusValue } from '@/core/domains/jobs/value-objects'
+import { SchedulingUseCaseFactory } from '../api/use-case-factory'
+import type { JobsListFilters } from '../types'
 
 type JobInstance = Tables<'job_instances'>
 type JobStatus = JobInstance['status']
-
-// TODO: Realtime subscription will be reintroduced via a domain-level event stream.
-
-// Enhanced filters interface for better type safety
-interface JobsListFilters {
-  status?: JobStatus | JobStatus[]
-  departmentId?: string
-  templateId?: string
-  dueDateStart?: string
-  dueDateEnd?: string
-  releaseDateStart?: string
-  releaseDateEnd?: string
-  search?: string
-  sortBy?: 'dueDate' | 'releaseDate' | 'status' | 'serialNumber' | 'createdAt'
-  sortOrder?: 'asc' | 'desc'
-  priority?: 'high' | 'medium' | 'low'
-}
-
-// Utilities are colocated in a dependency-free helpers module for testability
-import { isJobsListKey, normalizeStatusFilter, listKeyMatchesStatus } from './use-jobs-helpers'
 
 // Enhanced query keys factory for better caching strategy
 export const jobKeys = {
@@ -48,59 +26,62 @@ export const jobKeys = {
 
 // Enhanced fetch jobs with comprehensive filtering - uses domain layer with DI
 async function fetchJobs(filters?: JobsListFilters) {
-  const factory = UseCaseFactory.getInstance()
+  const factory = SchedulingUseCaseFactory.getInstance()
   const jobUseCases = await factory.getJobUseCases()
   return await jobUseCases.fetchJobs(filters)
 }
 
 // Fetch jobs with pagination for large datasets
 async function fetchJobsPaginated(pageParam: number, filters?: JobsListFilters, pageSize = 50) {
-  const factory = UseCaseFactory.getInstance()
+  const factory = SchedulingUseCaseFactory.getInstance()
   const jobUseCases = await factory.getJobUseCases()
   return await jobUseCases.fetchJobsPaginated(pageSize, pageParam * pageSize)
 }
 
 // Fetch job statistics for dashboard
 async function fetchJobStats() {
-  const factory = UseCaseFactory.getInstance()
+  const factory = SchedulingUseCaseFactory.getInstance()
   const jobUseCases = await factory.getJobUseCases()
   return await jobUseCases.getJobCount()
 }
 
 // Fetch jobs by status for manufacturing dashboards
 async function fetchJobsByStatus(status: JobStatus) {
-  const factory = UseCaseFactory.getInstance()
+  const factory = SchedulingUseCaseFactory.getInstance()
   const jobUseCases = await factory.getJobUseCases()
   return await jobUseCases.fetchJobs({ status })
 }
 
 // Fetch jobs by template for batch operations
 async function fetchJobsByTemplate(templateId: string) {
-  const factory = UseCaseFactory.getInstance()
+  const factory = SchedulingUseCaseFactory.getInstance()
   const jobUseCases = await factory.getJobUseCases()
   return await jobUseCases.fetchJobsByTemplateId(templateId)
 }
 
 // Fetch jobs by due date range for scheduling
 async function fetchJobsByDateRange(startDate: Date, endDate: Date) {
-  const factory = UseCaseFactory.getInstance()
+  const factory = SchedulingUseCaseFactory.getInstance()
   const jobUseCases = await factory.getJobUseCases()
   return await jobUseCases.fetchJobsByDueDateRange(startDate, endDate)
 }
 
 // Fetch single job by ID - now uses domain layer with DI
 async function fetchJobById(id: string) {
-  const factory = UseCaseFactory.getInstance()
+  const factory = SchedulingUseCaseFactory.getInstance()
   const jobUseCases = await factory.getJobUseCases()
   return await jobUseCases.fetchJobById(id)
 }
 
 // Update job status - now uses domain layer with validation and DI
 async function updateJobStatus({ id, status }: { id: string; status: JobStatus }) {
-  const factory = UseCaseFactory.getInstance()
+  const factory = SchedulingUseCaseFactory.getInstance()
   const jobUseCases = await factory.getJobUseCases()
   return await jobUseCases.updateJobStatus({ id, status })
 }
+
+// Utilities are colocated in a dependency-free helpers module for testability
+import { isJobsListKey, normalizeStatusFilter, listKeyMatchesStatus } from './use-jobs-helpers'
 
 // Enhanced hook to fetch jobs list with real-time updates
 export function useJobs(
@@ -241,7 +222,7 @@ export function useCreateJob() {
       name: string
       status?: string
     }) => {
-      const factory = UseCaseFactory.getInstance()
+      const factory = SchedulingUseCaseFactory.getInstance()
       const jobUseCases = await factory.getJobUseCases()
       return await jobUseCases.createJob(data)
     },
@@ -281,7 +262,7 @@ export function useDeleteJob() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const factory = UseCaseFactory.getInstance()
+      const factory = SchedulingUseCaseFactory.getInstance()
       const jobUseCases = await factory.getJobUseCases()
       return await jobUseCases.deleteJob(id)
     },
@@ -370,7 +351,7 @@ export function useBulkUpdateJobStatus() {
 
   return useMutation({
     mutationFn: async (updates: Array<{ id: string; status: JobStatus }>) => {
-      const factory = UseCaseFactory.getInstance()
+      const factory = SchedulingUseCaseFactory.getInstance()
       const jobUseCases = await factory.getJobUseCases()
 
       // Process updates in parallel for performance
@@ -403,6 +384,3 @@ export function useBulkUpdateJobStatus() {
     },
   })
 }
-
-// Export types for external use
-export type { JobsListFilters }

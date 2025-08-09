@@ -1,8 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { Operator } from '@/core/types/database'
-import { UseCaseFactory } from '@/core/use-cases/use-case-factory'
 import { useUIStore } from '@/core/stores/ui-store'
-import type { OperatorsListFilters } from '@/core/use-cases/operator-use-cases'
+
+// TODO: Temporarily simplified until operator use cases are properly migrated
+type OperatorsListFilters = {
+  departmentId?: string
+  status?: string
+  certificationId?: string
+}
 
 // Enhanced query keys factory for better caching strategy
 export const operatorKeys = {
@@ -18,56 +23,45 @@ export const operatorKeys = {
   stats: () => [...operatorKeys.all, 'stats'] as const,
 }
 
-// Fetch operators with optional filters - uses domain layer with DI
-async function fetchOperators(filters?: OperatorsListFilters) {
-  const factory = UseCaseFactory.getInstance()
-  const operatorUseCases = await factory.getOperatorUseCases()
-  return await operatorUseCases.getOperators(filters)
+// TODO: Implement proper API calls - temporary stubs
+async function fetchOperators(filters?: OperatorsListFilters): Promise<Operator[]> {
+  console.warn('Operator API not implemented - returning empty array')
+  return []
 }
 
-// Fetch single operator by ID - uses domain layer with DI
-async function fetchOperatorById(id: string) {
-  const factory = UseCaseFactory.getInstance()
-  const operatorUseCases = await factory.getOperatorUseCases()
-  return await operatorUseCases.getOperatorById(id)
+async function fetchOperatorById(id: string): Promise<Operator | null> {
+  console.warn('Operator API not implemented - returning null')
+  return null
 }
 
-// Fetch operator availability - uses domain layer with DI
 async function fetchOperatorAvailability(id: string, start: Date, end: Date) {
-  const factory = UseCaseFactory.getInstance()
-  const operatorUseCases = await factory.getOperatorUseCases()
-  return await operatorUseCases.getOperatorAvailability(id, start, end)
+  console.warn('Operator availability API not implemented - returning empty array')
+  return []
 }
 
-// Add additional fetch functions following the pattern
-async function fetchOperatorsByDepartment(departmentId: string) {
-  const factory = UseCaseFactory.getInstance()
-  const operatorUseCases = await factory.getOperatorUseCases()
-  return await operatorUseCases.getOperatorsByDepartment(departmentId)
+async function fetchOperatorsByDepartment(departmentId: string): Promise<Operator[]> {
+  console.warn('Operator by department API not implemented')
+  return []
 }
 
-async function fetchOperatorsByCertification(certificationId: string) {
-  const factory = UseCaseFactory.getInstance()
-  const operatorUseCases = await factory.getOperatorUseCases()
-  return await operatorUseCases.getOperatorsByCertification(certificationId)
+async function fetchOperatorsByCertification(certificationId: string): Promise<Operator[]> {
+  console.warn('Operator by certification API not implemented')
+  return []
 }
 
 async function fetchOperatorStats() {
-  const factory = UseCaseFactory.getInstance()
-  const operatorUseCases = await factory.getOperatorUseCases()
-  return await operatorUseCases.getOperatorCount()
+  console.warn('Operator stats API not implemented')
+  return { count: 0, active: 0, available: 0 }
 }
 
-async function updateOperatorStatus({ id, status }: { id: string; status: Operator['status'] }) {
-  const factory = UseCaseFactory.getInstance()
-  const operatorUseCases = await factory.getOperatorUseCases()
-  return await operatorUseCases.updateOperatorStatus(id, status)
+async function updateOperatorStatus({ id, status }: { id: string; status: Operator['status'] }): Promise<Operator> {
+  console.warn('Update operator status API not implemented')
+  throw new Error('Operator API not implemented')
 }
 
-async function updateOperatorActiveStatus({ id, isActive }: { id: string; isActive: boolean }) {
-  const factory = UseCaseFactory.getInstance()
-  const operatorUseCases = await factory.getOperatorUseCases()
-  return await operatorUseCases.updateOperatorActiveStatus(id, isActive)
+async function updateOperatorActiveStatus({ id, isActive }: { id: string; isActive: boolean }): Promise<Operator> {
+  console.warn('Update operator active status API not implemented')
+  throw new Error('Operator API not implemented')
 }
 
 // Enhanced hook to fetch operators list
@@ -211,9 +205,8 @@ export function useCreateOperator() {
       email?: string
       phoneNumber?: string
     }) => {
-      const factory = UseCaseFactory.getInstance()
-      const operatorUseCases = await factory.getOperatorUseCases()
-      return await operatorUseCases.createOperator(data)
+      console.warn('Create operator API not implemented')
+      throw new Error('Operator API not implemented')
     },
     onSuccess: (newOperator) => {
       // Add to cache and invalidate lists
@@ -249,9 +242,8 @@ export function useDeleteOperator() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const factory = UseCaseFactory.getInstance()
-      const operatorUseCases = await factory.getOperatorUseCases()
-      return await operatorUseCases.deleteOperator(id)
+      console.warn('Delete operator API not implemented')
+      throw new Error('Operator API not implemented')
     },
     onSuccess: (_, deletedId) => {
       // Get operator data before removing to optimize invalidations

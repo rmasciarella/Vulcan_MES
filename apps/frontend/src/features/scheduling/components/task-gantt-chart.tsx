@@ -20,7 +20,7 @@ import {
   AlertCircle,
   Info,
 } from 'lucide-react'
-import type { Task } from '@/core/domains/tasks'
+import type { Task } from '../types'
 import { cn } from '@/shared/lib/utils'
 
 interface TaskGanttChartProps {

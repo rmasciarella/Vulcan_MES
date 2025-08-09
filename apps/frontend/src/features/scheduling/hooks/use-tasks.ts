@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useUIStore } from '@/core/stores/ui-store'
-import { UseCaseFactory } from '@/core/use-cases/use-case-factory'
+import { SchedulingUseCaseFactory } from '../api/use-case-factory'
 
 // Type definitions for task-related operations
 type TaskStatusValue = 'pending' | 'ready' | 'in_progress' | 'completed' | 'cancelled'
@@ -31,7 +31,7 @@ export function useTasks(filters?: { status?: TaskStatusValue; jobId?: string })
   return useQuery({
     queryKey: taskKeys.list(filters || {}),
     queryFn: async () => {
-      const factory = UseCaseFactory.getInstance()
+      const factory = SchedulingUseCaseFactory.getInstance()
       const taskUseCases = await factory.getTaskUseCases()
       
       if (filters?.jobId) {
@@ -56,7 +56,7 @@ export function useTask(id: string) {
   return useQuery({
     queryKey: taskKeys.detail(id),
     queryFn: async () => {
-      const factory = UseCaseFactory.getInstance()
+      const factory = SchedulingUseCaseFactory.getInstance()
       const taskUseCases = await factory.getTaskUseCases()
       return await taskUseCases.getTaskById(id)
     },
@@ -72,7 +72,7 @@ export function useTasksByJob(jobId: string) {
   return useQuery({
     queryKey: taskKeys.byJob(jobId),
     queryFn: async () => {
-      const factory = UseCaseFactory.getInstance()
+      const factory = SchedulingUseCaseFactory.getInstance()
       const taskUseCases = await factory.getTaskUseCases()
       return await taskUseCases.getTasksByJobId(jobId)
     },
@@ -88,7 +88,7 @@ export function useTasksByStatus(status: TaskStatusValue) {
   return useQuery({
     queryKey: taskKeys.byStatus(status),
     queryFn: async () => {
-      const factory = UseCaseFactory.getInstance()
+      const factory = SchedulingUseCaseFactory.getInstance()
       const taskUseCases = await factory.getTaskUseCases()
       return await taskUseCases.getTasksByStatus(status)
     },
@@ -103,7 +103,7 @@ export function useSchedulableTasks() {
   return useQuery({
     queryKey: taskKeys.schedulable(),
     queryFn: async () => {
-      const factory = UseCaseFactory.getInstance()
+      const factory = SchedulingUseCaseFactory.getInstance()
       const taskUseCases = await factory.getTaskUseCases()
       return await taskUseCases.getSchedulableTasks()
     },
@@ -119,7 +119,7 @@ export function useActiveTasks() {
   return useQuery({
     queryKey: taskKeys.active(),
     queryFn: async () => {
-      const factory = UseCaseFactory.getInstance()
+      const factory = SchedulingUseCaseFactory.getInstance()
       const taskUseCases = await factory.getTaskUseCases()
       return await taskUseCases.getActiveTasks()
     },
@@ -135,7 +135,7 @@ export function useSetupTasks() {
   return useQuery({
     queryKey: taskKeys.setup(),
     queryFn: async () => {
-      const factory = UseCaseFactory.getInstance()
+      const factory = SchedulingUseCaseFactory.getInstance()
       const taskUseCases = await factory.getTaskUseCases()
       return await taskUseCases.getSetupTasks()
     },
@@ -150,7 +150,7 @@ export function useTasksBySkillLevel(skillLevel: SkillLevelValue) {
   return useQuery({
     queryKey: taskKeys.bySkillLevel(skillLevel),
     queryFn: async () => {
-      const factory = UseCaseFactory.getInstance()
+      const factory = SchedulingUseCaseFactory.getInstance()
       const taskUseCases = await factory.getTaskUseCases()
       return await taskUseCases.getTasksBySkillLevel(skillLevel)
     },
@@ -165,7 +165,7 @@ export function useUnattendedTasks() {
   return useQuery({
     queryKey: taskKeys.unattended(),
     queryFn: async () => {
-      const factory = UseCaseFactory.getInstance()
+      const factory = SchedulingUseCaseFactory.getInstance()
       const taskUseCases = await factory.getTaskUseCases()
       return await taskUseCases.getUnattendedTasks()
     },
@@ -180,7 +180,7 @@ export function useAttendedTasks() {
   return useQuery({
     queryKey: taskKeys.attended(),
     queryFn: async () => {
-      const factory = UseCaseFactory.getInstance()
+      const factory = SchedulingUseCaseFactory.getInstance()
       const taskUseCases = await factory.getTaskUseCases()
       return await taskUseCases.getAttendedTasks()
     },
@@ -209,7 +209,7 @@ export function useCreateTask() {
       isUnattended?: boolean
       isSetupTask?: boolean
     }) => {
-      const factory = UseCaseFactory.getInstance()
+      const factory = SchedulingUseCaseFactory.getInstance()
       const taskUseCases = await factory.getTaskUseCases()
       return await taskUseCases.createTask(params)
     },
@@ -257,7 +257,7 @@ export function useUpdateTaskStatus() {
       newStatus: TaskStatusValue
       reason?: string
     }) => {
-      const factory = UseCaseFactory.getInstance()
+      const factory = SchedulingUseCaseFactory.getInstance()
       const taskUseCases = await factory.getTaskUseCases()
       return await taskUseCases.updateTaskStatus(taskId, newStatus, reason)
     },
@@ -331,7 +331,7 @@ export function useMarkTaskReady() {
 
   return useMutation({
     mutationFn: async (taskId: string) => {
-      const factory = UseCaseFactory.getInstance()
+      const factory = SchedulingUseCaseFactory.getInstance()
       const taskUseCases = await factory.getTaskUseCases()
       return await taskUseCases.markTaskReady(taskId)
     },
@@ -365,7 +365,7 @@ export function useScheduleTask() {
 
   return useMutation({
     mutationFn: async ({ taskId, scheduledAt }: { taskId: string; scheduledAt: Date }) => {
-      const factory = UseCaseFactory.getInstance()
+      const factory = SchedulingUseCaseFactory.getInstance()
       const taskUseCases = await factory.getTaskUseCases()
       return await taskUseCases.scheduleTask(taskId, scheduledAt)
     },
@@ -399,7 +399,7 @@ export function useStartTask() {
 
   return useMutation({
     mutationFn: async ({ taskId, startedAt }: { taskId: string; startedAt?: Date }) => {
-      const factory = UseCaseFactory.getInstance()
+      const factory = SchedulingUseCaseFactory.getInstance()
       const taskUseCases = await factory.getTaskUseCases()
       return await taskUseCases.startTask(taskId, startedAt)
     },
@@ -433,7 +433,7 @@ export function useCompleteTask() {
 
   return useMutation({
     mutationFn: async ({ taskId, completedAt }: { taskId: string; completedAt?: Date }) => {
-      const factory = UseCaseFactory.getInstance()
+      const factory = SchedulingUseCaseFactory.getInstance()
       const taskUseCases = await factory.getTaskUseCases()
       return await taskUseCases.completeTask(taskId, completedAt)
     },
@@ -467,7 +467,7 @@ export function useCancelTask() {
 
   return useMutation({
     mutationFn: async ({ taskId, reason }: { taskId: string; reason: string }) => {
-      const factory = UseCaseFactory.getInstance()
+      const factory = SchedulingUseCaseFactory.getInstance()
       const taskUseCases = await factory.getTaskUseCases()
       return await taskUseCases.cancelTask(taskId, reason)
     },
@@ -498,7 +498,7 @@ export function useValidateTaskPrecedence(jobId: string) {
   return useQuery({
     queryKey: ['tasks', 'precedence', jobId],
     queryFn: async () => {
-      const factory = UseCaseFactory.getInstance()
+      const factory = SchedulingUseCaseFactory.getInstance()
       const taskUseCases = await factory.getTaskUseCases()
       return await taskUseCases.validateTaskPrecedence(jobId)
     },
@@ -514,7 +514,7 @@ export function useTaskCount() {
   return useQuery({
     queryKey: ['tasks', 'count'],
     queryFn: async () => {
-      const factory = UseCaseFactory.getInstance()
+      const factory = SchedulingUseCaseFactory.getInstance()
       const taskUseCases = await factory.getTaskUseCases()
       return await taskUseCases.getTaskCount()
     },
@@ -531,7 +531,7 @@ export function useDeleteTask() {
 
   return useMutation({
     mutationFn: async (taskId: string) => {
-      const factory = UseCaseFactory.getInstance()
+      const factory = SchedulingUseCaseFactory.getInstance()
       const taskUseCases = await factory.getTaskUseCases()
       return await taskUseCases.deleteTask(taskId)
     },
