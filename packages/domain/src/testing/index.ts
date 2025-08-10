@@ -19,8 +19,8 @@ export function createMockWorkOrder(overrides: Partial<{
     productType: overrides.productType ?? 'Mock Product Type',
     priority: overrides.priority ?? Jobs.JobPriority.MEDIUM,
     templateId: overrides.templateId ?? 'template-mock-001',
-    dueDate: overrides.dueDate,
-    releaseDate: overrides.releaseDate,
+    ...(overrides.dueDate !== undefined && { dueDate: overrides.dueDate }),
+    ...(overrides.releaseDate !== undefined && { releaseDate: overrides.releaseDate }),
   });
 }
 
@@ -35,8 +35,8 @@ export function createMockResource(overrides: Partial<Resources.Machine> = {}): 
       { operationType: 'CNC', skillsRequired: ['machining'], cycleTime: 15 },
     ],
     productionZoneId: overrides.productionZoneId ?? 'zone-1',
-    maintenanceWindowStart: overrides.maintenanceWindowStart,
-    maintenanceWindowEnd: overrides.maintenanceWindowEnd,
+    ...(overrides.maintenanceWindowStart !== undefined && { maintenanceWindowStart: overrides.maintenanceWindowStart }),
+    ...(overrides.maintenanceWindowEnd !== undefined && { maintenanceWindowEnd: overrides.maintenanceWindowEnd }),
     createdAt: overrides.createdAt ?? now,
     updatedAt: overrides.updatedAt ?? now,
   };

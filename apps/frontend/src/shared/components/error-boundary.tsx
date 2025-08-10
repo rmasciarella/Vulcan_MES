@@ -120,7 +120,7 @@ export function ManufacturingErrorBoundary({
         console.error(`Manufacturing component error in ${componentName}:`, error, errorInfo)
         onError?.(error)
       }}
-      onRetry={onRetry}
+      {...(onRetry !== undefined && { onRetry })}
       fallback={
         <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
           <AlertTriangle className="mx-auto mb-3 h-8 w-8 text-red-500" />
@@ -160,7 +160,7 @@ export function QueryErrorBoundary({
       onError={(error) => {
         console.error('Query error:', error)
       }}
-      onRetry={onRetry}
+      {...(onRetry !== undefined && { onRetry })}
       fallback={
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center">
           <AlertTriangle className="mx-auto mb-2 h-6 w-6 text-red-500" />

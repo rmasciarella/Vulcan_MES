@@ -1,21 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { Machine } from '@/core/types/database'
-import { useUIStore } from '@/core/stores/ui-store'
-
-// TODO: Temporarily simplified until machine use cases are properly migrated
-// Machine functionality needs to be implemented in features/resources or scheduling
-type MachinesListFilters = {
-  status?: string
-  type?: string
-  workCellId?: string
-}
-
-type MachineAvailability = {
-  id: string
-  start: Date
-  end: Date
-  available: boolean
-}
+import { getNotificationService } from '@/core/services/notification-service'
+import { 
+  machinesAPI, 
+  type MachinesListFilters, 
+  type MachineAvailability 
+} from '@/features/resources/api'
 
 // Enhanced query keys factory for better caching strategy
 export const machineKeys = {
@@ -33,30 +23,28 @@ export const machineKeys = {
   stats: () => [...machineKeys.all, 'stats'] as const,
 }
 
-// TODO: Implement proper API calls
-// These are temporary stubs until machine use cases are properly migrated
+// API functions using the machinesAPI
 async function fetchMachines(filters?: MachinesListFilters): Promise<Machine[]> {
-  // Temporary stub - implement proper API call
-  console.warn('Machine API not implemented - returning empty array')
-  return []
+  return machinesAPI.getMachines(filters)
 }
 
 async function fetchMachineById(id: string): Promise<Machine | null> {
-  // Temporary stub - implement proper API call
-  console.warn('Machine API not implemented - returning null')
-  return null
+  try {
+    return await machinesAPI.getMachine(id)
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('not found')) {
+      return null
+    }
+    throw error
+  }
 }
 
 async function fetchMachineAvailability(id: string, start: Date, end: Date): Promise<MachineAvailability[]> {
-  // Temporary stub - implement proper API call
-  console.warn('Machine availability API not implemented - returning empty array')
-  return []
+  return machinesAPI.getMachineAvailability(id, start, end)
 }
 
 async function updateMachineActiveStatus({ id, isActive }: { id: string; isActive: boolean }): Promise<Machine> {
-  // Temporary stub - implement proper API call
-  console.warn('Machine update API not implemented')
-  throw new Error('Machine API not implemented')
+  return machinesAPI.updateMachine(id, { is_active: isActive })
 }
 
 // Enhanced hook to fetch machines list with comprehensive filtering
@@ -105,7 +93,7 @@ export function useMachineAvailability(id: string, start: Date, end: Date) {
 // Enhanced hook to update machine active status with optimistic updates
 export function useUpdateMachineActiveStatus() {
   const queryClient = useQueryClient()
-  const addNotification = useUIStore((state) => state.addNotification)
+  const notificationService = getNotificationService()
 
   return useMutation({
     mutationFn: updateMachineActiveStatus,
@@ -137,7 +125,7 @@ export function useUpdateMachineActiveStatus() {
       queryClient.invalidateQueries({ queryKey: machineKeys.available() })
       queryClient.invalidateQueries({ queryKey: machineKeys.stats() })
 
-      addNotification({
+      notificationService.addNotification({
         type: 'success',
         title: 'Machine Updated',
         message: `Machine ${data.name} is now ${data.is_active ? 'active' : 'inactive'}`,
@@ -149,7 +137,7 @@ export function useUpdateMachineActiveStatus() {
         queryClient.setQueryData(machineKeys.detail(id), context.previousMachine)
       }
 
-      addNotification({
+      notificationService.addNotification({
         type: 'error',
         title: 'Update Failed',
         message: error.message,
@@ -166,11 +154,7 @@ export function useUpdateMachineActiveStatus() {
 export function useMachinesByWorkCell(workCellId: string) {
   return useQuery({
     queryKey: machineKeys.byWorkCell(workCellId),
-    queryFn: async () => {
-      // TODO: Implement proper API call
-      console.warn('Machine by work cell API not implemented')
-      return []
-    },
+    queryFn: () => machinesAPI.getMachinesByWorkCell(workCellId),
     enabled: !!workCellId,
     staleTime: 60 * 1000,
   })
@@ -179,11 +163,7 @@ export function useMachinesByWorkCell(workCellId: string) {
 export function useMachinesByType(machineType: string) {
   return useQuery({
     queryKey: machineKeys.byType(machineType),
-    queryFn: async () => {
-      // TODO: Implement proper API call
-      console.warn('Machine by type API not implemented')
-      return []
-    },
+    queryFn: () => machinesAPI.getMachinesByType(machineType),
     enabled: !!machineType,
     staleTime: 60 * 1000,
   })
@@ -192,11 +172,7 @@ export function useMachinesByType(machineType: string) {
 export function useActiveMachines() {
   return useQuery({
     queryKey: machineKeys.active(),
-    queryFn: async () => {
-      // TODO: Implement proper API call
-      console.warn('Active machines API not implemented')
-      return []
-    },
+    queryFn: () => machinesAPI.getActiveMachines(),
     staleTime: 30 * 1000,
     refetchInterval: 60 * 1000, // Auto-refresh for production dashboard
   })
@@ -205,11 +181,7 @@ export function useActiveMachines() {
 export function useAvailableMachines() {
   return useQuery({
     queryKey: machineKeys.available(),
-    queryFn: async () => {
-      // TODO: Implement proper API call
-      console.warn('Available machines API not implemented')
-      return []
-    },
+    queryFn: () => machinesAPI.getAvailableMachines(),
     staleTime: 30 * 1000,
     refetchInterval: 60 * 1000, // Auto-refresh for scheduling dashboard
   })
@@ -218,11 +190,7 @@ export function useAvailableMachines() {
 export function useMachineStats() {
   return useQuery({
     queryKey: machineKeys.stats(),
-    queryFn: async () => {
-      // TODO: Implement proper API call
-      console.warn('Machine stats API not implemented')
-      return { count: 0, active: 0, available: 0 }
-    },
+    queryFn: () => machinesAPI.getMachineStats(),
     staleTime: 5 * 60 * 1000, // 5 minutes for stats
     refetchInterval: 2 * 60 * 1000, // Auto-refresh every 2 minutes
   })
@@ -231,7 +199,7 @@ export function useMachineStats() {
 // Hook to create a new machine
 export function useCreateMachine() {
   const queryClient = useQueryClient()
-  const addNotification = useUIStore((state) => state.addNotification)
+  const notificationService = getNotificationService()
 
   return useMutation({
     mutationFn: async (machineData: {
@@ -242,9 +210,14 @@ export function useCreateMachine() {
       serialNumber?: string
       description?: string
     }) => {
-      // TODO: Implement proper API call
-      console.warn('Create machine API not implemented')
-      throw new Error('Machine API not implemented')
+      return machinesAPI.createMachine({
+        name: machineData.name,
+        machine_type: machineData.machineType,
+        ...(machineData.workCellId !== undefined && { work_cell_id: machineData.workCellId }),
+        ...(machineData.departmentId !== undefined && { department_id: machineData.departmentId }),
+        ...(machineData.serialNumber !== undefined && { serial_number: machineData.serialNumber }),
+        ...(machineData.description !== undefined && { description: machineData.description }),
+      })
     },
     onSuccess: (newMachine) => {
       // Add to cache and invalidate lists
@@ -266,14 +239,14 @@ export function useCreateMachine() {
         queryClient.invalidateQueries({ queryKey: machineKeys.byType(newMachine.machine_type) })
       }
 
-      addNotification({
+      notificationService.addNotification({
         type: 'success',
         title: 'Machine Created',
         message: `Machine ${newMachine.name} has been created successfully`,
       })
     },
     onError: (error) => {
-      addNotification({
+      notificationService.addNotification({
         type: 'error',
         title: 'Create Machine Failed',
         message: error.message,
@@ -285,13 +258,12 @@ export function useCreateMachine() {
 // Hook to delete a machine
 export function useDeleteMachine() {
   const queryClient = useQueryClient()
-  const addNotification = useUIStore((state) => state.addNotification)
+  const notificationService = getNotificationService()
 
   return useMutation({
     mutationFn: async (id: string) => {
-      // TODO: Implement proper API call
-      console.warn('Delete machine API not implemented')
-      throw new Error('Machine API not implemented')
+      await machinesAPI.deleteMachine(id)
+      return id
     },
     onSuccess: (_, deletedId) => {
       // Get machine data before removing to optimize invalidations
@@ -320,14 +292,14 @@ export function useDeleteMachine() {
         queryClient.invalidateQueries({ queryKey: machineKeys.available() })
       }
 
-      addNotification({
+      notificationService.addNotification({
         type: 'success',
         title: 'Machine Deleted',
         message: 'Machine has been deleted successfully',
       })
     },
     onError: (error) => {
-      addNotification({
+      notificationService.addNotification({
         type: 'error',
         title: 'Delete Machine Failed',
         message: error.message,
@@ -339,13 +311,13 @@ export function useDeleteMachine() {
 // Hook to update machine status
 export function useUpdateMachineStatus() {
   const queryClient = useQueryClient()
-  const addNotification = useUIStore((state) => state.addNotification)
+  const notificationService = getNotificationService()
 
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: Machine['status'] }) => {
-      // TODO: Implement proper API call
-      console.warn('Update machine status API not implemented')
-      throw new Error('Machine API not implemented')
+      return machinesAPI.updateMachine(id, {
+        ...(status !== undefined && status !== null && { status })
+      })
     },
     onSuccess: (data) => {
       // Update the specific machine in cache
@@ -363,14 +335,14 @@ export function useUpdateMachineStatus() {
         queryClient.invalidateQueries({ queryKey: machineKeys.active() })
       }
 
-      addNotification({
+      notificationService.addNotification({
         type: 'success',
         title: 'Machine Status Updated',
         message: `Machine ${data.name} status changed to ${data.status}`,
       })
     },
     onError: (error) => {
-      addNotification({
+      notificationService.addNotification({
         type: 'error',
         title: 'Status Update Failed',
         message: error.message,
@@ -379,5 +351,5 @@ export function useUpdateMachineStatus() {
   })
 }
 
-// Export types for external use
-export type { MachinesListFilters, MachineAvailability }
+// Re-export types for convenience
+export type { MachinesListFilters, MachineAvailability } from '@/features/resources/api'

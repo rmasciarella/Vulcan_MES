@@ -2,8 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 // TODO: Realtime migration: expose domain-friendly subscription API via UseCaseFactory. Avoid direct Supabase imports here.
 import type { SolvedSchedule, SolvedScheduleInsert, ScheduledTask } from '@/core/types/database'
 import type { ScheduleFilters } from '@/infrastructure/supabase/repositories/supabase-schedule-repository'
-import { useUIStore } from '@/core/stores/ui-store'
-import { useSchedulingStore } from '@/core/stores/scheduling-store'
+import { getNotificationService } from '@/core/services/notification-service'
+import { useSchedulingStore } from '../stores/scheduling-store'
 import { SchedulingUseCaseFactory } from '../api/use-case-factory'
 import { useEffect } from 'react'
 
@@ -137,7 +137,7 @@ export function useScheduleTasks(scheduleId: string) {
 // Enhanced hook to create schedule with optimistic updates
 export function useCreateSchedule() {
   const queryClient = useQueryClient()
-  const addNotification = useUIStore((state) => state.addNotification)
+  const notificationService = getNotificationService()
 
   return useMutation({
     mutationFn: createSchedule,
@@ -152,14 +152,14 @@ export function useCreateSchedule() {
         queryClient.invalidateQueries({ queryKey: scheduleKeys.byStatus(newSchedule.status) })
       }
 
-      addNotification({
+      notificationService.addNotification({
         type: 'success',
         title: 'Schedule Created',
         message: `Schedule created successfully`,
       })
     },
     onError: (error) => {
-      addNotification({
+      notificationService.addNotification({
         type: 'error',
         title: 'Creation Failed',
         message: error.message,
@@ -171,7 +171,7 @@ export function useCreateSchedule() {
 // Enhanced hook to update schedule solver status with optimistic updates
 export function useUpdateScheduleSolverStatus() {
   const queryClient = useQueryClient()
-  const addNotification = useUIStore((state) => state.addNotification)
+  const notificationService = getNotificationService()
 
   return useMutation({
     mutationFn: updateScheduleSolverStatus,
@@ -207,7 +207,7 @@ export function useUpdateScheduleSolverStatus() {
         queryClient.invalidateQueries({ queryKey: scheduleKeys.byStatus(previousSchedule.status) })
       }
 
-      addNotification({
+      notificationService.addNotification({
         type: 'success',
         title: 'Schedule Updated',
         message: `Schedule solver status changed to ${data.status}`,
@@ -219,7 +219,7 @@ export function useUpdateScheduleSolverStatus() {
         queryClient.setQueryData(scheduleKeys.detail(id), context.previousSchedule)
       }
 
-      addNotification({
+      notificationService.addNotification({
         type: 'error',
         title: 'Update Failed',
         message: error.message,
@@ -235,7 +235,7 @@ export function useUpdateScheduleSolverStatus() {
 // Enhanced hook to save draft schedule with better feedback
 export function useSaveDraftSchedule() {
   const queryClient = useQueryClient()
-  const addNotification = useUIStore((state) => state.addNotification)
+  const notificationService = getNotificationService()
   const clearDraftSchedule = useSchedulingStore((state) => state.clearDraftSchedule)
 
   return useMutation({
@@ -246,14 +246,14 @@ export function useSaveDraftSchedule() {
       queryClient.invalidateQueries({ queryKey: scheduleKeys.detail(data.scheduleId) })
       clearDraftSchedule()
 
-      addNotification({
+      notificationService.addNotification({
         type: 'success',
         title: 'Schedule Saved',
         message: `${data.taskCount} tasks saved successfully`,
       })
     },
     onError: (error) => {
-      addNotification({
+      notificationService.addNotification({
         type: 'error',
         title: 'Save Failed',
         message: error.message,
@@ -265,7 +265,7 @@ export function useSaveDraftSchedule() {
 // Hook to delete a schedule
 export function useDeleteSchedule() {
   const queryClient = useQueryClient()
-  const addNotification = useUIStore((state) => state.addNotification)
+  const notificationService = getNotificationService()
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -287,14 +287,14 @@ export function useDeleteSchedule() {
         queryClient.invalidateQueries({ queryKey: scheduleKeys.byStatus(deletedSchedule.status) })
       }
 
-      addNotification({
+      notificationService.addNotification({
         type: 'success',
         title: 'Schedule Deleted',
         message: 'Schedule has been deleted successfully',
       })
     },
     onError: (error) => {
-      addNotification({
+      notificationService.addNotification({
         type: 'error',
         title: 'Delete Schedule Failed',
         message: error.message,

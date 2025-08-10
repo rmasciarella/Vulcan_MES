@@ -55,7 +55,9 @@ export function useServiceWarmup(serviceName: 'schedule' | 'operator' | 'machine
       try {
         await ServiceInitializer.warmUpService(serviceName)
       } catch (error) {
-        logger.warn(`[useServiceWarmup] Failed to warm up ${serviceName} service:`, String(error))
+        logger.warn(`[useServiceWarmup] Failed to warm up ${serviceName} service:`, 
+          error instanceof Error ? error : new Error(String(error))
+        )
       }
     }
 

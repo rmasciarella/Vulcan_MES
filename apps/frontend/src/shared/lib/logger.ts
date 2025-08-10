@@ -74,7 +74,7 @@ class Logger {
     }
   }
 
-  private handleCriticalError(_message: string, _context?: LogContext) {
+  private handleCriticalError(_message: string, _context?: LogInput) {
     // In a real manufacturing system, this would:
     // - Send alerts to supervisors
     // - Possibly halt affected production lines
@@ -110,7 +110,7 @@ class Logger {
     this.info('Job started', {
       jobId,
       machineId,
-      operatorId,
+      ...(operatorId !== undefined && { operatorId }),
       event: 'job_start',
     })
   }

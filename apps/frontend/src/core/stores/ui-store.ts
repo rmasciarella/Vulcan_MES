@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { devtools } from 'zustand/middleware'
+import { devtools, persist } from 'zustand/middleware'
 
 interface NotificationItem {
   id: string
@@ -43,7 +43,8 @@ interface UIState {
 
 export const useUIStore = create<UIState>()(
   devtools(
-    (set) => ({
+    persist(
+      (set) => ({
       // Initial state
       isSidebarOpen: true,
       isMobileMenuOpen: false,
@@ -111,7 +112,15 @@ export const useUIStore = create<UIState>()(
           activeModal: null,
           modalData: null,
         }),
-    }),
+      }),
+      {
+        name: 'vulcan-ui-store',
+        partialize: (state) => ({
+          isSidebarOpen: state.isSidebarOpen,
+          // Don't persist notifications, modal states, or loading states
+        }),
+      },
+    ),
     {
       name: 'UIStore',
     },

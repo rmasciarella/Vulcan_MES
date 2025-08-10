@@ -2,7 +2,7 @@ import { getSupabaseBrowserClient } from '@/infrastructure/supabase/browser-sing
 import { JobUseCases } from './job-use-cases'
 import { TaskUseCases } from './task-use-cases'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '../../../types/supabase'
+import type { Database } from '@/types/supabase'
 
 /**
  * Factory for creating scheduling-specific use cases with dependency injection

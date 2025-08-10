@@ -1,31 +1,38 @@
+// next.config.js - FINAL VERSION
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+})
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
   reactStrictMode: true,
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+  swcMinify: true,
+
+  // TypeScript and ESLint
+  typescript: { ignoreBuildErrors: true },
+  eslint: { ignoreDuringBuilds: true },
+
+  // Optimizations
   experimental: {
     typedRoutes: true,
-    optimizePackageImports: ['lucide-react', '@tanstack/react-query', '@tanstack/react-virtual'],
+    optimizePackageImports: [
+      'lucide-react',
+      '@tanstack/react-query',
+      '@tanstack/react-virtual'
+    ],
   },
+
+  // Module imports optimization
   modularizeImports: {
     'lucide-react': {
       transform: 'lucide-react/dist/esm/icons/{{ kebabCase member }}',
       preventFullImport: true,
     },
-    '@tanstack/react-query': {
-      transform: '@tanstack/react-query/{{ member }}',
-      preventFullImport: true,
-    },
-    '@tanstack/react-virtual': {
-      transform: '@tanstack/react-virtual/{{ member }}',
-      preventFullImport: true,
-    },
   },
+
+  // Monorepo packages
+  transpilePackages: ['@vulcan/domain'],
 }
 
-module.exports = nextConfig
+module.exports = withBundleAnalyzer(nextConfig)

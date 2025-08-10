@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
+import { getQueryConfig, createQueryOptions, createMutationOptions } from '@/core/services/query-config-service'
 import { useEffect } from 'react'
 import type { Tables } from '@/types/supabase'
-import { useUIStore } from '@/core/stores/ui-store'
+import { getNotificationService } from '@/core/services/notification-service'
 import { SchedulingUseCaseFactory } from '../api/use-case-factory'
 import type { JobsListFilters } from '../types'
 
@@ -95,18 +96,22 @@ export function useJobs(
   const queryClient = useQueryClient()
   const {
     enableRealtime = false,
-    // Set safety fallback of 10 minutes when realtime is enabled; otherwise default to 30s
-    refetchInterval = enableRealtime ? 10 * 60 * 1000 : 30 * 1000,
-    staleTime = 30 * 1000,
+    refetchInterval,
+    staleTime,
   } = options || {}
 
+  // Use standardized query config based on data type
+  const config = enableRealtime ? getQueryConfig('realtime') : getQueryConfig('frequent')
+  
   const query = useQuery({
     queryKey: jobKeys.list(filters || {}),
     queryFn: () => fetchJobs(filters),
-    staleTime,
-    refetchInterval,
+    staleTime: staleTime ?? config.staleTime,
+    refetchInterval: refetchInterval ?? (enableRealtime ? config.refetchInterval : false),
     // Do not refetch in background when realtime is enabled
     refetchIntervalInBackground: !enableRealtime,
+    retry: config.retry,
+    retryDelay: config.retryDelay
   })
 
   // Set up real-time subscription for job changes
@@ -154,7 +159,7 @@ export function useJob(id: string, options?: { enableRealtime?: boolean }) {
 // Enhanced hook to update job status with optimistic updates
 export function useUpdateJobStatus() {
   const queryClient = useQueryClient()
-  const addNotification = useUIStore((state) => state.addNotification)
+  const notificationService = getNotificationService()
 
   return useMutation({
     mutationFn: updateJobStatus,
@@ -187,7 +192,7 @@ export function useUpdateJobStatus() {
       queryClient.invalidateQueries({ queryKey: jobKeys.stats() })
       queryClient.invalidateQueries({ queryKey: jobKeys.byStatus(data.status) })
 
-      addNotification({
+      notificationService.addNotification({
         type: 'success',
         title: 'Job Updated',
         message: `Job ${data.name} status changed to ${data.status}`,
@@ -199,7 +204,7 @@ export function useUpdateJobStatus() {
         queryClient.setQueryData(jobKeys.detail(id), context.previousJob)
       }
 
-      addNotification({
+      notificationService.addNotification({
         type: 'error',
         title: 'Update Failed',
         message: error.message,
@@ -215,7 +220,7 @@ export function useUpdateJobStatus() {
 // Hook to create a new job
 export function useCreateJob() {
   const queryClient = useQueryClient()
-  const addNotification = useUIStore((state) => state.addNotification)
+  const notificationService = getNotificationService()
 
   return useMutation({
     mutationFn: async (data: {
@@ -239,14 +244,14 @@ export function useCreateJob() {
       // Invalidate count query which aggregates all jobs
       queryClient.invalidateQueries({ queryKey: jobKeys.count() })
 
-      addNotification({
+      notificationService.addNotification({
         type: 'success',
         title: 'Job Created',
         message: `Job ${newJob.name} has been created successfully`,
       })
     },
     onError: (error) => {
-      addNotification({
+      notificationService.addNotification({
         type: 'error',
         title: 'Create Job Failed',
         message: error.message,
@@ -258,7 +263,7 @@ export function useCreateJob() {
 // Hook to delete a job
 export function useDeleteJob() {
   const queryClient = useQueryClient()
-  const addNotification = useUIStore((state) => state.addNotification)
+  const notificationService = getNotificationService()
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -273,14 +278,14 @@ export function useDeleteJob() {
       queryClient.invalidateQueries({ predicate: (q) => isJobsListKey(q.queryKey) })
       queryClient.invalidateQueries({ queryKey: jobKeys.stats() })
 
-      addNotification({
+      notificationService.addNotification({
         type: 'success',
         title: 'Job Deleted',
         message: 'Job has been deleted successfully',
       })
     },
     onError: (error) => {
-      addNotification({
+      notificationService.addNotification({
         type: 'error',
         title: 'Delete Job Failed',
         message: error.message,
@@ -326,11 +331,12 @@ export function useJobsByDateRange(startDate: Date, endDate: Date) {
 }
 
 export function useJobStats() {
+  const config = getQueryConfig('analytics')
+  
   return useQuery({
     queryKey: jobKeys.stats(),
     queryFn: fetchJobStats,
-    staleTime: 5 * 60 * 1000, // 5 minutes for stats
-    refetchInterval: 2 * 60 * 1000, // Auto-refresh every 2 minutes
+    ...config
   })
 }
 
@@ -347,7 +353,7 @@ export function useJobRealtime(jobId: string) {
 // Bulk operations hooks for manufacturing efficiency
 export function useBulkUpdateJobStatus() {
   const queryClient = useQueryClient()
-  const addNotification = useUIStore((state) => state.addNotification)
+  const notificationService = getNotificationService()
 
   return useMutation({
     mutationFn: async (updates: Array<{ id: string; status: JobStatus }>) => {
@@ -369,14 +375,14 @@ export function useBulkUpdateJobStatus() {
       queryClient.invalidateQueries({ predicate: (q) => isJobsListKey(q.queryKey) })
       queryClient.invalidateQueries({ queryKey: jobKeys.stats() })
 
-      addNotification({
+      notificationService.addNotification({
         type: successful > 0 ? 'success' : 'error',
         title: 'Bulk Update Complete',
         message: `${successful} jobs updated successfully${failed > 0 ? `, ${failed} failed` : ''}`,
       })
     },
     onError: (error) => {
-      addNotification({
+      notificationService.addNotification({
         type: 'error',
         title: 'Bulk Update Failed',
         message: error.message,

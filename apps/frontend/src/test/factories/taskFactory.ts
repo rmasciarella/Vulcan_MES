@@ -19,7 +19,7 @@ export function makeTask(overrides: Partial<{
     sequence: overrides.sequence ?? 1,
     attendanceRequirement: overrides.attendanceRequirement ?? 0, // 0 = attended, 1 = unattended
     isSetupTask: overrides.isSetupTask ?? false,
-    assignedTo: overrides.assignedTo,
+    ...(overrides.assignedTo !== undefined && { assignedTo: overrides.assignedTo }),
     taskModes: overrides.taskModes ?? []
   })
   return entity

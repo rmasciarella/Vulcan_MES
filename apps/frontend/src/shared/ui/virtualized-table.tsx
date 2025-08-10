@@ -48,7 +48,7 @@ export function VirtualizedTable<T>({
               transform: `translateY(${virtualItem.start}px)`,
             }}
           >
-            {renderRow(data[virtualItem.index], virtualItem.index)}
+            {data[virtualItem.index] !== undefined && renderRow(data[virtualItem.index]!, virtualItem.index)}
           </div>
         ))}
       </div>

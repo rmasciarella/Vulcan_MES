@@ -166,6 +166,26 @@ build:
 	@pnpm build
 	@docker-compose build
 
+# Netlify: Set Production env vars for frontend from direnv and deploy
+netlify-env-prod:
+	@echo "🔐 Loading direnv and setting Netlify Production env vars for frontend..."
+	@cd apps/frontend && eval "$(direnv export bash)" >/dev/null 2>&1 || true; \
+	  cd apps/frontend && \
+	  netlify status --json >/dev/null; \
+	  netlify env:set NEXT_PUBLIC_API_URL --context production <<< "https://vulcan-mes.com" && \
+	  netlify env:set NEXT_PUBLIC_SUPABASE_URL --context production <<< "$${NEXT_PUBLIC_SUPABASE_URL}" && \
+	  netlify env:set NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY --context production <<< "$${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY}" && \
+	  netlify env:set NEXT_PUBLIC_SUPABASE_ANON_KEY --context production <<< "$${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY}" && \
+	  netlify env:set NEXT_PUBLIC_APP_ENV --context production <<< "production" && \
+	  netlify env:set NEXT_PUBLIC_ENABLE_MOCK_DATA --context production <<< "false" && \
+	  netlify env:set NEXT_PUBLIC_ENABLE_DEBUG_UI --context production <<< "false" && \
+	  echo "✅ Netlify production env vars set."
+
+netlify-deploy-prod:
+	@echo "🚀 Triggering Netlify production deploy (clean build)..."
+	@cd apps/frontend && netlify deploy --prod --build
+	@echo "✅ Netlify production deploy triggered."
+
 deploy-staging:
 	@echo "🚀 Deploying to staging..."
 	@git push origin main

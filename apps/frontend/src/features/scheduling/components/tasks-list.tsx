@@ -25,7 +25,9 @@ export function TasksList({
 }: TasksListProps) {
   // Always call hooks at top level - React rules of hooks
   const tasksByJobResult = useTasksByJob(jobId || '')
-  const allTasksResult = useTasks({ status })
+  const allTasksResult = useTasks(
+    status !== undefined ? { status } : undefined
+  )
 
   // Use appropriate data based on filters
   const { data: tasks, isLoading, error } = jobId ? tasksByJobResult : allTasksResult

@@ -1,6 +1,12 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 import { Database } from '@/types/supabase'
 import type { Task, TaskInsert, TaskUpdate } from '@/core/types/database'
+// Simple error message extraction utility (replaced deprecated http-client import)
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message
+  if (typeof error === 'string') return error
+  return String(error)
+}
 
 type TaskStatus = 'pending' | 'ready' | 'in_progress' | 'completed' | 'cancelled' | 'blocked' | 'on_hold' | 'scheduled'
 type SkillLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert'
@@ -74,101 +80,168 @@ export interface PaginatedTasksResponse {
 /**
  * Business logic layer for task operations
  * Encapsulates all task-related use cases and domain logic
+ * Enhanced with comprehensive error handling and validation
  */
 export class TaskUseCases {
   constructor(private readonly supabase: SupabaseClient<Database>) {}
 
   /**
+   * Validate task data before operations
+   */
+  private validateTaskData(data: any, operation: string): void {
+    if (!data) {
+      throw new Error(`Invalid task data provided for ${operation}`)
+    }
+    if (operation === 'create') {
+      if (!data.name) {
+        throw new Error('Task name is required for creation')
+      }
+      if (data.sequence !== undefined && (typeof data.sequence !== 'number' || data.sequence < 0)) {
+        throw new Error('Task sequence must be a non-negative number')
+      }
+    }
+  }
+
+  /**
+   * Handle Supabase errors with context
+   */
+  private handleSupabaseError(error: any, operation: string, context?: string): never {
+    const baseMessage = `Failed to ${operation} task${context ? ` ${context}` : ''}`
+    
+    if (error.code === 'PGRST116') {
+      throw new Error(`${baseMessage}: Task not found`)
+    }
+    if (error.code === '23505') {
+      throw new Error(`${baseMessage}: Task with this identifier already exists`)
+    }
+    if (error.code === '23503') {
+      throw new Error(`${baseMessage}: Referenced resource does not exist`)
+    }
+    if (error.code === '23514') {
+      throw new Error(`${baseMessage}: Invalid data provided`)
+    }
+    
+    throw new Error(`${baseMessage}: ${getErrorMessage(error)}`)
+  }
+
+  /**
    * Fetch tasks with optional filtering and pagination
    */
   async getTasks(filters?: TaskListFilters): Promise<Task[]> {
-    let query = this.supabase
-      .from('scheduled_tasks')
-      .select('*')
-      .order('created_at', { ascending: false })
+    try {
+      let query = this.supabase
+        .from('scheduled_tasks')
+        .select('*')
+        .order('created_at', { ascending: false })
 
-    // Apply status filter (single status or array)
-    if (filters?.status) {
-      if (Array.isArray(filters.status)) {
-        query = query.in('status', filters.status)
-      } else {
-        query = query.eq('status', filters.status)
+      // Apply status filter (single status or array)
+      if (filters?.status) {
+        if (Array.isArray(filters.status)) {
+          // Filter out invalid statuses
+          const validStatuses = filters.status.filter(s => s && typeof s === 'string')
+          if (validStatuses.length > 0) {
+            query = query.in('status', validStatuses)
+          }
+        } else if (filters.status) {
+          query = query.eq('status', filters.status)
+        }
       }
-    }
 
-    // Apply jobId filter
-    if (filters?.jobId) {
-      // Note: scheduled_tasks doesn't have job_id directly, may need to join or use a different approach
-      // For now, we'll skip this filter since it's not in the current schema
-    }
-
-    // Apply machineId filter
-    if (filters?.machineId) {
-      query = query.eq('machine_id', filters.machineId)
-    }
-
-    // Apply operatorId filter
-    if (filters?.operatorId) {
-      query = query.eq('operator_id', filters.operatorId)
-    }
-
-    // Apply search filter on task name
-    if (filters?.search) {
-      query = query.ilike('task_name', `%${filters.search}%`)
-    }
-
-    // Apply sorting
-    if (filters?.sortBy && filters?.sortOrder) {
-      const ascending = filters.sortOrder === 'asc'
-      switch (filters.sortBy) {
-        case 'task_name':
-          query = query.order('task_name', { ascending })
-          break
-        case 'status':
-          query = query.order('status', { ascending })
-          break
-        case 'scheduled_start':
-          query = query.order('scheduled_start', { ascending })
-          break
-        case 'scheduled_end':
-          query = query.order('scheduled_end', { ascending })
-          break
-        case 'created_at':
-          query = query.order('created_at', { ascending })
-          break
-        default:
-          // Default sorting by created_at desc
-          break
+      // Apply jobId filter
+      if (filters?.jobId) {
+        // Note: scheduled_tasks doesn't have job_id directly, may need to join or use a different approach
+        // For now, we'll skip this filter since it's not in the current schema
+        console.warn('getTasks: jobId filter not supported in current schema')
       }
+
+      // Apply machineId filter
+      if (filters?.machineId) {
+        query = query.eq('machine_id', filters.machineId.trim())
+      }
+
+      // Apply operatorId filter
+      if (filters?.operatorId) {
+        query = query.eq('operator_id', filters.operatorId.trim())
+      }
+
+      // Apply search filter on task name
+      if (filters?.search) {
+        const searchTerm = filters.search.trim()
+        if (searchTerm) {
+          query = query.ilike('task_name', `%${searchTerm}%`)
+        }
+      }
+
+      // Apply sorting
+      if (filters?.sortBy && filters?.sortOrder) {
+        const ascending = filters.sortOrder === 'asc'
+        switch (filters.sortBy) {
+          case 'task_name':
+            query = query.order('task_name', { ascending })
+            break
+          case 'status':
+            query = query.order('status', { ascending })
+            break
+          case 'scheduled_start':
+            query = query.order('scheduled_start', { ascending })
+            break
+          case 'scheduled_end':
+            query = query.order('scheduled_end', { ascending })
+            break
+          case 'created_at':
+            query = query.order('created_at', { ascending })
+            break
+          default:
+            // Default sorting by created_at desc
+            break
+        }
+      }
+
+      const { data, error } = await query
+
+      if (error) {
+        this.handleSupabaseError(error, 'fetch', 'list')
+      }
+
+      return (data as Task[]) || []
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error
+      }
+      throw new Error(`Unexpected error fetching tasks: ${getErrorMessage(error)}`)
     }
-
-    const { data, error } = await query
-
-    if (error) {
-      throw new Error(`Failed to fetch tasks: ${error.message}`)
-    }
-
-    return data as Task[]
   }
 
   /**
    * Fetch a single task by ID
    */
   async getTask(id: string): Promise<Task> {
-    const { data, error } = await this.supabase
-      .from('scheduled_tasks')
-      .select('*')
-      .eq('id', id)
-      .single()
+    try {
+      if (!id || typeof id !== 'string') {
+        throw new Error('Valid task ID is required')
+      }
 
-    if (error) {
-      if (error.code === 'PGRST116') {
+      const { data, error } = await this.supabase
+        .from('scheduled_tasks')
+        .select('*')
+        .eq('id', id.trim())
+        .single()
+
+      if (error) {
+        this.handleSupabaseError(error, 'fetch', `with ID ${id}`)
+      }
+
+      if (!data) {
         throw new Error(`Task with ID ${id} not found`)
       }
-      throw new Error(`Failed to fetch task: ${error.message}`)
-    }
 
-    return data as Task
+      return data as Task
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error
+      }
+      throw new Error(`Unexpected error fetching task: ${getErrorMessage(error)}`)
+    }
   }
 
   /**
@@ -327,51 +400,131 @@ export class TaskUseCases {
    * Create a new task
    */
   async createTask(taskData: CreateTaskData): Promise<Task> {
-    const insertData: TaskInsert = {
-      task_name: taskData.name,
-      status: taskData.status || 'pending',
-      machine_id: taskData.machineId,
-      operator_id: taskData.operatorId,
-      scheduled_start: taskData.scheduledStart || new Date().toISOString(),
-      scheduled_end: taskData.scheduledEnd || new Date(Date.now() + 3600000).toISOString(), // 1 hour later
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+    try {
+      this.validateTaskData(taskData, 'create')
+
+      const now = new Date().toISOString()
+      const oneHourLater = new Date(Date.now() + 3600000).toISOString()
+
+      const insertData: TaskInsert = {
+        task_name: taskData.name.trim(),
+        status: taskData.status || 'pending',
+        machine_id: taskData.machineId?.trim() || null,
+        operator_id: taskData.operatorId?.trim() || null,
+        scheduled_start: taskData.scheduledStart || now,
+        scheduled_end: taskData.scheduledEnd || oneHourLater,
+        created_at: now,
+        updated_at: now,
+      }
+
+      // Validate scheduled dates
+      if (insertData.scheduled_start && insertData.scheduled_end) {
+        const startDate = new Date(insertData.scheduled_start)
+        const endDate = new Date(insertData.scheduled_end)
+        if (startDate >= endDate) {
+          throw new Error('Scheduled end time must be after start time')
+        }
+      }
+
+      const { data, error } = await this.supabase
+        .from('scheduled_tasks')
+        .insert(insertData)
+        .select()
+        .single()
+
+      if (error) {
+        this.handleSupabaseError(error, 'create')
+      }
+
+      if (!data) {
+        throw new Error('Task creation failed: No data returned')
+      }
+
+      return data as Task
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error
+      }
+      throw new Error(`Unexpected error creating task: ${getErrorMessage(error)}`)
     }
-
-    const { data, error } = await this.supabase
-      .from('scheduled_tasks')
-      .insert(insertData)
-      .select()
-      .single()
-
-    if (error) {
-      throw new Error(`Failed to create task: ${error.message}`)
-    }
-
-    return data as Task
   }
 
   /**
    * Update an existing task
    */
   async updateTask(id: string, updateData: UpdateTaskData): Promise<Task> {
-    const updates: TaskUpdate = {
-      updated_at: new Date().toISOString(),
-      ...updateData,
+    try {
+      if (!id || typeof id !== 'string') {
+        throw new Error('Valid task ID is required')
+      }
+      if (!updateData || Object.keys(updateData).length === 0) {
+        throw new Error('Update data is required')
+      }
+
+      // Validate and clean update data
+      const updates: TaskUpdate = {
+        updated_at: new Date().toISOString(),
+      }
+
+      if (updateData.task_name !== undefined) {
+        const trimmedName = updateData.task_name.trim()
+        if (!trimmedName) {
+          throw new Error('Task name cannot be empty')
+        }
+        updates.task_name = trimmedName
+      }
+      
+      if (updateData.status !== undefined) {
+        updates.status = updateData.status
+      }
+      
+      if (updateData.machine_id !== undefined) {
+        updates.machine_id = updateData.machine_id?.trim() || null
+      }
+      
+      if (updateData.operator_id !== undefined) {
+        updates.operator_id = updateData.operator_id?.trim() || null
+      }
+      
+      if (updateData.scheduled_start !== undefined) {
+        updates.scheduled_start = updateData.scheduled_start
+      }
+      
+      if (updateData.scheduled_end !== undefined) {
+        updates.scheduled_end = updateData.scheduled_end
+      }
+
+      // Validate scheduled dates if both are provided
+      if (updates.scheduled_start && updates.scheduled_end) {
+        const startDate = new Date(updates.scheduled_start)
+        const endDate = new Date(updates.scheduled_end)
+        if (startDate >= endDate) {
+          throw new Error('Scheduled end time must be after start time')
+        }
+      }
+
+      const { data, error } = await this.supabase
+        .from('scheduled_tasks')
+        .update(updates)
+        .eq('id', id.trim())
+        .select()
+        .single()
+
+      if (error) {
+        this.handleSupabaseError(error, 'update', `with ID ${id}`)
+      }
+
+      if (!data) {
+        throw new Error(`Task with ID ${id} not found for update`)
+      }
+
+      return data as Task
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error
+      }
+      throw new Error(`Unexpected error updating task: ${getErrorMessage(error)}`)
     }
-
-    const { data, error } = await this.supabase
-      .from('scheduled_tasks')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single()
-
-    if (error) {
-      throw new Error(`Failed to update task: ${error.message}`)
-    }
-
-    return data as Task
   }
 
   /**
@@ -385,13 +538,28 @@ export class TaskUseCases {
    * Delete a task
    */
   async deleteTask(id: string): Promise<void> {
-    const { error } = await this.supabase
-      .from('scheduled_tasks')
-      .delete()
-      .eq('id', id)
+    try {
+      if (!id || typeof id !== 'string') {
+        throw new Error('Valid task ID is required')
+      }
 
-    if (error) {
-      throw new Error(`Failed to delete task: ${error.message}`)
+      const { error, count } = await this.supabase
+        .from('scheduled_tasks')
+        .delete({ count: 'exact' })
+        .eq('id', id.trim())
+
+      if (error) {
+        this.handleSupabaseError(error, 'delete', `with ID ${id}`)
+      }
+
+      if (count === 0) {
+        throw new Error(`Task with ID ${id} not found for deletion`)
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error
+      }
+      throw new Error(`Unexpected error deleting task: ${getErrorMessage(error)}`)
     }
   }
 

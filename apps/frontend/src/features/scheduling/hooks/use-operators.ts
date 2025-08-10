@@ -1,13 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { Operator } from '@/core/types/database'
 import { useUIStore } from '@/core/stores/ui-store'
-
-// TODO: Temporarily simplified until operator use cases are properly migrated
-type OperatorsListFilters = {
-  departmentId?: string
-  status?: string
-  certificationId?: string
-}
+import { 
+  operatorsAPI, 
+  type OperatorsListFilters 
+} from '@/features/resources/api'
 
 // Enhanced query keys factory for better caching strategy
 export const operatorKeys = {
@@ -23,45 +20,44 @@ export const operatorKeys = {
   stats: () => [...operatorKeys.all, 'stats'] as const,
 }
 
-// TODO: Implement proper API calls - temporary stubs
+// API functions using the operatorsAPI
 async function fetchOperators(filters?: OperatorsListFilters): Promise<Operator[]> {
-  console.warn('Operator API not implemented - returning empty array')
-  return []
+  return operatorsAPI.getOperators(filters)
 }
 
 async function fetchOperatorById(id: string): Promise<Operator | null> {
-  console.warn('Operator API not implemented - returning null')
-  return null
+  try {
+    return await operatorsAPI.getOperator(id)
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('not found')) {
+      return null
+    }
+    throw error
+  }
 }
 
 async function fetchOperatorAvailability(id: string, start: Date, end: Date) {
-  console.warn('Operator availability API not implemented - returning empty array')
-  return []
+  return operatorsAPI.getOperatorAvailability(id, start, end)
 }
 
 async function fetchOperatorsByDepartment(departmentId: string): Promise<Operator[]> {
-  console.warn('Operator by department API not implemented')
-  return []
+  return operatorsAPI.getOperatorsByDepartment(departmentId)
 }
 
 async function fetchOperatorsByCertification(certificationId: string): Promise<Operator[]> {
-  console.warn('Operator by certification API not implemented')
-  return []
+  return operatorsAPI.getOperatorsByCertification(certificationId)
 }
 
 async function fetchOperatorStats() {
-  console.warn('Operator stats API not implemented')
-  return { count: 0, active: 0, available: 0 }
+  return operatorsAPI.getOperatorStats()
 }
 
 async function updateOperatorStatus({ id, status }: { id: string; status: Operator['status'] }): Promise<Operator> {
-  console.warn('Update operator status API not implemented')
-  throw new Error('Operator API not implemented')
+  return operatorsAPI.updateOperatorStatus(id, status)
 }
 
 async function updateOperatorActiveStatus({ id, isActive }: { id: string; isActive: boolean }): Promise<Operator> {
-  console.warn('Update operator active status API not implemented')
-  throw new Error('Operator API not implemented')
+  return operatorsAPI.updateOperatorActiveStatus(id, isActive)
 }
 
 // Enhanced hook to fetch operators list
@@ -95,7 +91,7 @@ export function useOperatorAvailability(id: string, start: Date, end: Date) {
 // Hook to update operator status with optimistic updates
 export function useUpdateOperatorStatus() {
   const queryClient = useQueryClient()
-  const addNotification = useUIStore((state) => state.addNotification)
+  const notificationService = getNotificationService()
 
   return useMutation({
     mutationFn: updateOperatorStatus,
@@ -130,7 +126,7 @@ export function useUpdateOperatorStatus() {
         queryClient.invalidateQueries({ queryKey: operatorKeys.byDepartment(data.department_id) })
       }
 
-      addNotification({
+      notificationService.addNotification({
         type: 'success',
         title: 'Operator Updated',
         message: `${data.first_name} ${data.last_name} status changed to ${data.status}`,
@@ -142,7 +138,7 @@ export function useUpdateOperatorStatus() {
         queryClient.setQueryData(operatorKeys.detail(id), context.previousOperator)
       }
 
-      addNotification({
+      notificationService.addNotification({
         type: 'error',
         title: 'Update Failed',
         message: error.message,
@@ -158,7 +154,7 @@ export function useUpdateOperatorStatus() {
 // Hook to update operator active status
 export function useUpdateOperatorActiveStatus() {
   const queryClient = useQueryClient()
-  const addNotification = useUIStore((state) => state.addNotification)
+  const notificationService = getNotificationService()
 
   return useMutation({
     mutationFn: updateOperatorActiveStatus,
@@ -175,14 +171,14 @@ export function useUpdateOperatorActiveStatus() {
         queryClient.invalidateQueries({ queryKey: operatorKeys.byDepartment(data.department_id) })
       }
 
-      addNotification({
+      notificationService.addNotification({
         type: 'success',
         title: 'Operator Updated',
         message: `${data.first_name} ${data.last_name} is now ${data.is_active ? 'active' : 'inactive'}`,
       })
     },
     onError: (error) => {
-      addNotification({
+      notificationService.addNotification({
         type: 'error',
         title: 'Update Failed',
         message: error.message,
@@ -194,7 +190,7 @@ export function useUpdateOperatorActiveStatus() {
 // Hook to create a new operator
 export function useCreateOperator() {
   const queryClient = useQueryClient()
-  const addNotification = useUIStore((state) => state.addNotification)
+  const notificationService = getNotificationService()
 
   return useMutation({
     mutationFn: async (data: {
@@ -205,8 +201,14 @@ export function useCreateOperator() {
       email?: string
       phoneNumber?: string
     }) => {
-      console.warn('Create operator API not implemented')
-      throw new Error('Operator API not implemented')
+      return operatorsAPI.createOperator({
+        first_name: data.firstName,
+        last_name: data.lastName,
+        employee_id: data.employeeId,
+        ...(data.departmentId !== undefined && { department_id: data.departmentId }),
+        ...(data.email !== undefined && { email: data.email }),
+        ...(data.phoneNumber !== undefined && { phone_number: data.phoneNumber }),
+      })
     },
     onSuccess: (newOperator) => {
       // Add to cache and invalidate lists
@@ -219,14 +221,14 @@ export function useCreateOperator() {
         queryClient.invalidateQueries({ queryKey: operatorKeys.byDepartment(newOperator.department_id) })
       }
 
-      addNotification({
+      notificationService.addNotification({
         type: 'success',
         title: 'Operator Created',
         message: `${newOperator.first_name} ${newOperator.last_name} has been created successfully`,
       })
     },
     onError: (error) => {
-      addNotification({
+      notificationService.addNotification({
         type: 'error',
         title: 'Create Operator Failed',
         message: error.message,
@@ -238,12 +240,12 @@ export function useCreateOperator() {
 // Hook to delete an operator
 export function useDeleteOperator() {
   const queryClient = useQueryClient()
-  const addNotification = useUIStore((state) => state.addNotification)
+  const notificationService = getNotificationService()
 
   return useMutation({
     mutationFn: async (id: string) => {
-      console.warn('Delete operator API not implemented')
-      throw new Error('Operator API not implemented')
+      await operatorsAPI.deleteOperator(id)
+      return id
     },
     onSuccess: (_, deletedId) => {
       // Get operator data before removing to optimize invalidations
@@ -259,14 +261,14 @@ export function useDeleteOperator() {
         queryClient.invalidateQueries({ queryKey: operatorKeys.byDepartment(deletedOperator.department_id) })
       }
 
-      addNotification({
+      notificationService.addNotification({
         type: 'success',
         title: 'Operator Deleted',
         message: 'Operator has been deleted successfully',
       })
     },
     onError: (error) => {
-      addNotification({
+      notificationService.addNotification({
         type: 'error',
         title: 'Delete Operator Failed',
         message: error.message,
@@ -303,5 +305,5 @@ export function useOperatorStats() {
   })
 }
 
-// Export types for external use
-export type { OperatorsListFilters }
+// Re-export types for convenience
+export type { OperatorsListFilters } from '@/features/resources/api'

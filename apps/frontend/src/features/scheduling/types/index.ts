@@ -2,16 +2,8 @@
 export * from './jobs'
 export * from './tasks'
 
-// Additional scheduling types
-export interface ScheduledTask {
-  id: string
-  jobId: string
-  startTime: Date
-  endTime: Date
-  machineId?: string
-  operatorId?: string
-  status: 'scheduled' | 'in_progress' | 'completed'
-}
+// Re-export ScheduledTask from the canonical source to avoid duplication
+export type { ScheduledTask } from '@/core/types/database'
 
 // Scheduling preferences and view state types
 export interface SchedulingViewState {

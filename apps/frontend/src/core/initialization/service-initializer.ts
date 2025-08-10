@@ -1,37 +1,9 @@
-// TODO: Temporarily stubbed - use case factory needs to be properly migrated to features
-// import { UseCaseFactory } from '@/core/use-cases/use-case-factory'
-
-// Temporary stub for UseCaseFactory
-class UseCaseFactoryStub {
-  static async initialize(client: SupabaseClient<Database>) {
-    console.warn('[ServiceInitializer] UseCaseFactory stub - no actual initialization')
-  }
-  
-  static getInstance() {
-    return {
-      getScheduleUseCases: async () => {
-        console.warn('[ServiceInitializer] Schedule use cases stub')
-      },
-      getOperatorUseCases: async () => {
-        console.warn('[ServiceInitializer] Operator use cases stub')
-      },
-      getMachineUseCases: async () => {
-        console.warn('[ServiceInitializer] Machine use cases stub')
-      }
-    }
-  }
-  
-  static reset() {
-    console.warn('[ServiceInitializer] UseCaseFactory reset stub')
-  }
-}
-
-const UseCaseFactory = UseCaseFactoryStub
+import { UseCaseFactory } from '@/core/use-cases/use-case-factory'
 
 import { getSupabaseBrowserClient } from '@/infrastructure/supabase/browser-singleton'
 import { logger } from '@/shared/lib/logger'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '../../../types/supabase'
+import type { Database } from '@/types/supabase'
 
 /**
  * Service initialization manager with performance optimizations
@@ -87,9 +59,9 @@ class ServiceInitializer {
     } catch (error) {
       ServiceInitializer.isInitializing = false
       ServiceInitializer.initializationPromise = null
-logger.error('[ServiceInitializer] Service initialization failed:', {
-        err: error instanceof Error ? error : new Error(String(error)),
-      })
+logger.error('[ServiceInitializer] Service initialization failed:', 
+        error instanceof Error ? error : new Error(String(error))
+      )
       throw error
     } finally {
       ServiceInitializer.isInitializing = false
@@ -117,9 +89,9 @@ logger.error('[ServiceInitializer] Service initialization failed:', {
 
       logger.debug('[ServiceInitializer] Core services initialized')
     } catch (error) {
-logger.error('[ServiceInitializer] Failed to initialize core services:', {
-        err: error instanceof Error ? error : new Error(String(error)),
-      })
+logger.error('[ServiceInitializer] Failed to initialize core services:',
+        error instanceof Error ? error : new Error(String(error))
+      )
       throw error
     }
   }
@@ -142,17 +114,17 @@ logger.error('[ServiceInitializer] Failed to initialize core services:', {
           await factory.getMachineUseCases()
           logger.debug('[ServiceInitializer] Background pre-warming completed')
         } catch (error) {
-logger.warn('[ServiceInitializer] Background pre-warming failed:', {
-            err: error instanceof Error ? error : new Error(String(error)),
-          })
+logger.warn('[ServiceInitializer] Background pre-warming failed:',
+            error instanceof Error ? error : new Error(String(error))
+          )
         }
       }, 100)
 
       logger.debug('[ServiceInitializer] Services pre-warmed')
     } catch (error) {
-logger.warn('[ServiceInitializer] Pre-warming failed (non-critical):', {
-      err: error instanceof Error ? error : new Error(String(error)),
-    })
+logger.warn('[ServiceInitializer] Pre-warming failed (non-critical):',
+      error instanceof Error ? error : new Error(String(error))
+    )
       // Don't throw here - pre-warming is optional
     }
   }
@@ -210,9 +182,9 @@ logger.warn('[ServiceInitializer] Pre-warming failed (non-critical):', {
       
       logger.debug(`[ServiceInitializer] Warmed up ${serviceName} service`)
     } catch (error) {
-logger.warn(`[ServiceInitializer] Failed to warm up ${serviceName} service:`, {
-        err: error instanceof Error ? error : new Error(String(error)),
-      })
+logger.warn(`[ServiceInitializer] Failed to warm up ${serviceName} service:`,
+        error instanceof Error ? error : new Error(String(error))
+      )
     }
   }
 }

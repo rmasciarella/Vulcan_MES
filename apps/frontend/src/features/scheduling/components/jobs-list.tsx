@@ -4,8 +4,8 @@ import React, { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
-import { Skeleton } from '@/shared/ui/skeleton'
 import { Alert, AlertDescription } from '@/shared/ui/alert'
+import { JobsLoadingSkeleton, ErrorStateWithRetry } from '@/shared/components/loading-skeletons'
 import {
   AlertCircle,
   Calendar,
@@ -20,13 +20,13 @@ import {
 import { VirtualizedJobTable } from '@/shared/ui/virtualized-job-table'
 import { Job, JobStatusValue } from '../types/jobs'
 import { useJobs, useUpdateJobStatus } from '../hooks/use-jobs'
-import { useUIStore } from '@/core/stores/ui-store'
+import { getErrorHandlingService } from '@/core/services/error-handling-service'
 
 export function JobsList(): React.JSX.Element {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards')
   const [statusFilter, setStatusFilter] = useState<keyof typeof JobStatusValue | undefined>()
   const [searchTerm, setSearchTerm] = useState('')
-  const addNotification = useUIStore((state) => state.addNotification)
+  const errorHandlingService = getErrorHandlingService()
 
   const {
     data: jobs,
@@ -34,10 +34,10 @@ export function JobsList(): React.JSX.Element {
     error,
     refetch,
   } = useJobs(
-    {
-      status: statusFilter,
-      search: searchTerm,
-    },
+    statusFilter !== undefined || searchTerm ? {
+      ...(statusFilter !== undefined && { status: JobStatusValue[statusFilter] }),
+      ...(searchTerm && { search: searchTerm }),
+    } : undefined,
     {
       enableRealtime: true,
     },
@@ -68,18 +68,14 @@ export function JobsList(): React.JSX.Element {
           break
         case 'view':
           // TODO: Navigate to job details page
-          addNotification({
-            type: 'info',
-            title: 'Job Details',
-            message: `Viewing details for job ${jobId}`,
-          })
+          console.log('Viewing job details:', jobId)
           break
       }
     } catch (error) {
-      addNotification({
-        type: 'error',
-        title: 'Action Failed',
-        message: error instanceof Error ? error.message : 'Unknown error occurred',
+      errorHandlingService.handleError(error, {
+        operation: `Job action: ${action}`,
+        component: 'JobsList',
+        metadata: { jobId }
       })
     }
   }
@@ -93,45 +89,16 @@ export function JobsList(): React.JSX.Element {
     }) || []
 
   if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Production Jobs</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-32 w-full" />
-        </CardContent>
-      </Card>
-    )
+    return <JobsLoadingSkeleton />
   }
 
   if (error) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-red-600">
-            <AlertCircle className="h-5 w-5" />
-            Production Error
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Alert variant="destructive">
-            <AlertDescription>
-              Unable to load production jobs. This may affect scheduling operations.
-              <div className="mt-3 flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => refetch()}>
-                  Retry
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
-                  Reload Page
-                </Button>
-              </div>
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
+      <ErrorStateWithRetry
+        title="Failed to Load Production Jobs"
+        message="Unable to load production jobs. This may affect scheduling operations."
+        onRetry={() => refetch()}
+      />
     )
   }
 

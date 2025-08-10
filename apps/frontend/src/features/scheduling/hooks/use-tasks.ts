@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useUIStore } from '@/core/stores/ui-store'
+import { getNotificationService } from '@/core/services/notification-service'
 import { SchedulingUseCaseFactory } from '../api/use-case-factory'
 
 // Type definitions for task-related operations
@@ -193,7 +193,7 @@ export function useAttendedTasks() {
  */
 export function useCreateTask() {
   const queryClient = useQueryClient()
-  const addNotification = useUIStore((state) => state.addNotification)
+  const notificationService = getNotificationService()
 
   return useMutation({
     mutationFn: async (params: {
@@ -224,14 +224,14 @@ export function useCreateTask() {
         queryClient.invalidateQueries({ queryKey: taskKeys.byStatus(task.status.value) })
       }
 
-      addNotification({
+      notificationService.addNotification({
         type: 'success',
         title: 'Task Created',
         message: `Task "${task.name.toString()}" has been created successfully`,
       })
     },
     onError: (error) => {
-      addNotification({
+      notificationService.addNotification({
         type: 'error',
         title: 'Create Task Failed',
         message: error.message,
@@ -245,7 +245,7 @@ export function useCreateTask() {
  */
 export function useUpdateTaskStatus() {
   const queryClient = useQueryClient()
-  const addNotification = useUIStore((state) => state.addNotification)
+  const notificationService = getNotificationService()
 
   return useMutation({
     mutationFn: async ({
@@ -301,7 +301,7 @@ export function useUpdateTaskStatus() {
         queryClient.invalidateQueries({ queryKey: taskKeys.active() })
       }
 
-      addNotification({
+      notificationService.addNotification({
         type: 'success',
         title: 'Task Status Updated',
         message: `Task status changed to ${task.status.toString()}`,
@@ -313,7 +313,7 @@ export function useUpdateTaskStatus() {
         queryClient.setQueryData(taskKeys.detail(taskId), context.previousTask)
       }
 
-      addNotification({
+      notificationService.addNotification({
         type: 'error',
         title: 'Status Update Failed',
         message: error.message,
@@ -327,7 +327,7 @@ export function useUpdateTaskStatus() {
  */
 export function useMarkTaskReady() {
   const queryClient = useQueryClient()
-  const addNotification = useUIStore((state) => state.addNotification)
+  const notificationService = getNotificationService()
 
   return useMutation({
     mutationFn: async (taskId: string) => {
@@ -340,14 +340,14 @@ export function useMarkTaskReady() {
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() })
       queryClient.invalidateQueries({ queryKey: taskKeys.schedulable() })
 
-      addNotification({
+      notificationService.addNotification({
         type: 'success',
         title: 'Task Ready',
         message: `Task "${task.name.toString()}" is now ready for scheduling`,
       })
     },
     onError: (error) => {
-      addNotification({
+      notificationService.addNotification({
         type: 'error',
         title: 'Mark Ready Failed',
         message: error.message,
@@ -361,7 +361,7 @@ export function useMarkTaskReady() {
  */
 export function useScheduleTask() {
   const queryClient = useQueryClient()
-  const addNotification = useUIStore((state) => state.addNotification)
+  const notificationService = getNotificationService()
 
   return useMutation({
     mutationFn: async ({ taskId, scheduledAt }: { taskId: string; scheduledAt: Date }) => {
@@ -374,14 +374,14 @@ export function useScheduleTask() {
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() })
       queryClient.invalidateQueries({ queryKey: taskKeys.schedulable() })
 
-      addNotification({
+      notificationService.addNotification({
         type: 'success',
         title: 'Task Scheduled',
         message: `Task "${task.name.toString()}" has been scheduled`,
       })
     },
     onError: (error) => {
-      addNotification({
+      notificationService.addNotification({
         type: 'error',
         title: 'Scheduling Failed',
         message: error.message,
@@ -395,7 +395,7 @@ export function useScheduleTask() {
  */
 export function useStartTask() {
   const queryClient = useQueryClient()
-  const addNotification = useUIStore((state) => state.addNotification)
+  const notificationService = getNotificationService()
 
   return useMutation({
     mutationFn: async ({ taskId, startedAt }: { taskId: string; startedAt?: Date }) => {
@@ -408,14 +408,14 @@ export function useStartTask() {
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() })
       queryClient.invalidateQueries({ queryKey: taskKeys.active() })
 
-      addNotification({
+      notificationService.addNotification({
         type: 'info',
         title: 'Task Started',
         message: `Task "${task.name.toString()}" execution has started`,
       })
     },
     onError: (error) => {
-      addNotification({
+      notificationService.addNotification({
         type: 'error',
         title: 'Start Task Failed',
         message: error.message,
@@ -429,7 +429,7 @@ export function useStartTask() {
  */
 export function useCompleteTask() {
   const queryClient = useQueryClient()
-  const addNotification = useUIStore((state) => state.addNotification)
+  const notificationService = getNotificationService()
 
   return useMutation({
     mutationFn: async ({ taskId, completedAt }: { taskId: string; completedAt?: Date }) => {
@@ -442,14 +442,14 @@ export function useCompleteTask() {
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() })
       queryClient.invalidateQueries({ queryKey: taskKeys.active() })
 
-      addNotification({
+      notificationService.addNotification({
         type: 'success',
         title: 'Task Completed',
         message: `Task "${task.name.toString()}" has been completed successfully`,
       })
     },
     onError: (error) => {
-      addNotification({
+      notificationService.addNotification({
         type: 'error',
         title: 'Complete Task Failed',
         message: error.message,
@@ -463,7 +463,7 @@ export function useCompleteTask() {
  */
 export function useCancelTask() {
   const queryClient = useQueryClient()
-  const addNotification = useUIStore((state) => state.addNotification)
+  const notificationService = getNotificationService()
 
   return useMutation({
     mutationFn: async ({ taskId, reason }: { taskId: string; reason: string }) => {
@@ -475,14 +475,14 @@ export function useCancelTask() {
       queryClient.setQueryData(taskKeys.detail(task.id.toString()), task)
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() })
 
-      addNotification({
+      notificationService.addNotification({
         type: 'warning',
         title: 'Task Cancelled',
         message: `Task "${task.name.toString()}" has been cancelled`,
       })
     },
     onError: (error) => {
-      addNotification({
+      notificationService.addNotification({
         type: 'error',
         title: 'Cancel Task Failed',
         message: error.message,
@@ -527,7 +527,7 @@ export function useTaskCount() {
  */
 export function useDeleteTask() {
   const queryClient = useQueryClient()
-  const addNotification = useUIStore((state) => state.addNotification)
+  const notificationService = getNotificationService()
 
   return useMutation({
     mutationFn: async (taskId: string) => {
@@ -560,14 +560,14 @@ export function useDeleteTask() {
         }
       }
 
-      addNotification({
+      notificationService.addNotification({
         type: 'success',
         title: 'Task Deleted',
         message: 'Task has been deleted successfully',
       })
     },
     onError: (error) => {
-      addNotification({
+      notificationService.addNotification({
         type: 'error',
         title: 'Delete Task Failed',
         message: error.message,

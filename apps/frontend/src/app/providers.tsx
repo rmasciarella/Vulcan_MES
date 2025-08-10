@@ -1,6 +1,7 @@
 'use client'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { createQueryClient } from '@/core/services/query-config-service'
 import dynamic from 'next/dynamic'
 const ReactQueryDevtools = process.env.NODE_ENV !== 'production'
   ? dynamic(() => import('@tanstack/react-query-devtools').then(m => ({ default: m.ReactQueryDevtools } as any)), {
@@ -16,26 +17,7 @@ import { useEffect } from 'react'
 import { initializeServices } from '@/core/initialization/service-initializer'
 
 function makeQueryClient() {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        // Manufacturing data changes frequently, use 30 second default
-        staleTime: 30 * 1000, // 30 seconds
-        gcTime: 5 * 60 * 1000, // 5 minutes (formerly cacheTime)
-        retry: 1,
-        refetchOnWindowFocus: false, // Manufacturing apps often stay open
-      },
-      mutations: {
-        retry: 0,
-        onError: (error) => {
-          logger.error('Mutation error', {
-            error: error instanceof Error ? error.message : 'Unknown error',
-            stack: error instanceof Error ? error.stack : undefined,
-          })
-        },
-      },
-    },
-  })
+  return createQueryClient()
 }
 
 let browserQueryClient: QueryClient | undefined = undefined

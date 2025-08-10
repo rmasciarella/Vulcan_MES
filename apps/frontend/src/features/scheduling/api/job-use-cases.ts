@@ -2,6 +2,12 @@ import { SupabaseClient } from '@supabase/supabase-js'
 import { Database } from '@/types/supabase'
 import type { JobInstance } from '@/core/types/database'
 import { JobsListFilters } from '../types'
+// Simple error message extraction utility (replaced deprecated http-client import)
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message
+  if (typeof error === 'string') return error
+  return String(error)
+}
 
 type JobStatus = JobInstance['status']
 
@@ -43,59 +49,104 @@ export interface PaginatedJobsResponse {
 /**
  * Business logic layer for job operations
  * Encapsulates all job-related use cases and domain logic
+ * Enhanced with comprehensive error handling and validation
  */
 export class JobUseCases {
   constructor(private readonly supabase: SupabaseClient<Database>) {}
 
   /**
+   * Validate job data before operations
+   */
+  private validateJobData(data: any, operation: string): void {
+    if (!data) {
+      throw new Error(`Invalid job data provided for ${operation}`)
+    }
+    if (operation === 'create' && !data.name) {
+      throw new Error('Job name is required for creation')
+    }
+  }
+
+  /**
+   * Handle Supabase errors with context
+   */
+  private handleSupabaseError(error: any, operation: string, context?: string): never {
+    const baseMessage = `Failed to ${operation} job${context ? ` ${context}` : ''}`
+    
+    if (error.code === 'PGRST116') {
+      throw new Error(`${baseMessage}: Job not found`)
+    }
+    if (error.code === '23505') {
+      throw new Error(`${baseMessage}: Job with this name already exists`)
+    }
+    if (error.code === '23503') {
+      throw new Error(`${baseMessage}: Referenced resource does not exist`)
+    }
+    if (error.code === '23514') {
+      throw new Error(`${baseMessage}: Invalid data provided`)
+    }
+    
+    throw new Error(`${baseMessage}: ${getErrorMessage(error)}`)
+  }
+
+  /**
    * Fetch jobs with optional filtering and pagination
    */
   async getJobs(filters?: JobsListFilters): Promise<JobInstance[]> {
-    let query = this.supabase
-      .from('job_instances')
-      .select('*')
-      .order('created_at', { ascending: false })
+    try {
+      let query = this.supabase
+        .from('job_instances')
+        .select('*')
+        .order('created_at', { ascending: false })
 
-    // Apply status filter (single status or array)
-    if (filters?.status) {
-      if (Array.isArray(filters.status)) {
-        query = query.in('status', filters.status)
-      } else {
-        query = query.eq('status', filters.status)
+      // Apply status filter (single status or array)
+      if (filters?.status) {
+        if (Array.isArray(filters.status)) {
+          query = query.in('status', filters.status)
+        } else {
+          query = query.eq('status', filters.status)
+        }
       }
-    }
 
-    // Apply search filter on name
-    if (filters?.search) {
-      query = query.ilike('name', `%${filters.search}%`)
-    }
-
-    // Apply sorting
-    if (filters?.sortBy && filters?.sortOrder) {
-      const ascending = filters.sortOrder === 'asc'
-      switch (filters.sortBy) {
-        case 'serialNumber':
-          query = query.order('name', { ascending }) // Using name as serialNumber
-          break
-        case 'status':
-          query = query.order('status', { ascending })
-          break
-        case 'createdAt':
-          query = query.order('created_at', { ascending })
-          break
-        default:
-          // Default sorting by created_at desc
-          break
+      // Apply search filter on name
+      if (filters?.search) {
+        const searchTerm = filters.search.trim()
+        if (searchTerm) {
+          query = query.ilike('name', `%${searchTerm}%`)
+        }
       }
+
+      // Apply sorting
+      if (filters?.sortBy && filters?.sortOrder) {
+        const ascending = filters.sortOrder === 'asc'
+        switch (filters.sortBy) {
+          case 'serialNumber':
+            query = query.order('name', { ascending }) // Using name as serialNumber
+            break
+          case 'status':
+            query = query.order('status', { ascending })
+            break
+          case 'createdAt':
+            query = query.order('created_at', { ascending })
+            break
+          default:
+            // Default sorting by created_at desc
+            break
+        }
+      }
+
+      const { data, error } = await query
+
+      if (error) {
+        this.handleSupabaseError(error, 'fetch', 'list')
+      }
+
+      return (data as JobInstance[]) || []
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error
+      }
+      throw new Error(`Unexpected error fetching jobs: ${getErrorMessage(error)}`)
     }
-
-    const { data, error } = await query
-
-    if (error) {
-      throw new Error(`Failed to fetch jobs: ${error.message}`)
-    }
-
-    return data as JobInstance[]
   }
 
   /**
@@ -146,20 +197,32 @@ export class JobUseCases {
    * Fetch a single job by ID
    */
   async getJob(id: string): Promise<JobInstance> {
-    const { data, error } = await this.supabase
-      .from('job_instances')
-      .select('*')
-      .eq('instance_id', id)
-      .single()
+    try {
+      if (!id || typeof id !== 'string') {
+        throw new Error('Valid job ID is required')
+      }
 
-    if (error) {
-      if (error.code === 'PGRST116') {
+      const { data, error } = await this.supabase
+        .from('job_instances')
+        .select('*')
+        .eq('instance_id', id.trim())
+        .single()
+
+      if (error) {
+        this.handleSupabaseError(error, 'fetch', `with ID ${id}`)
+      }
+
+      if (!data) {
         throw new Error(`Job with ID ${id} not found`)
       }
-      throw new Error(`Failed to fetch job: ${error.message}`)
-    }
 
-    return data as JobInstance
+      return data as JobInstance
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error
+      }
+      throw new Error(`Unexpected error fetching job: ${getErrorMessage(error)}`)
+    }
   }
 
   /**
@@ -198,47 +261,89 @@ export class JobUseCases {
    * Create a new job
    */
   async createJob(jobData: CreateJobData): Promise<JobInstance> {
-    const { data, error } = await this.supabase
-      .from('job_instances')
-      .insert({
-        name: jobData.name,
+    try {
+      this.validateJobData(jobData, 'create')
+
+      const now = new Date().toISOString()
+      const insertData = {
+        name: jobData.name.trim(),
         status: jobData.status || 'draft',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .select()
-      .single()
+        created_at: now,
+        updated_at: now,
+      }
 
-    if (error) {
-      throw new Error(`Failed to create job: ${error.message}`)
+      const { data, error } = await this.supabase
+        .from('job_instances')
+        .insert(insertData)
+        .select()
+        .single()
+
+      if (error) {
+        this.handleSupabaseError(error, 'create')
+      }
+
+      if (!data) {
+        throw new Error('Job creation failed: No data returned')
+      }
+
+      return data as JobInstance
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error
+      }
+      throw new Error(`Unexpected error creating job: ${getErrorMessage(error)}`)
     }
-
-    return data as JobInstance
   }
 
   /**
    * Update an existing job
    */
   async updateJob(id: string, updateData: UpdateJobData): Promise<JobInstance> {
-    const updates: any = {
-      updated_at: new Date().toISOString(),
+    try {
+      if (!id || typeof id !== 'string') {
+        throw new Error('Valid job ID is required')
+      }
+      if (!updateData || Object.keys(updateData).length === 0) {
+        throw new Error('Update data is required')
+      }
+
+      const updates: any = {
+        updated_at: new Date().toISOString(),
+      }
+
+      if (updateData.name !== undefined) {
+        const trimmedName = updateData.name.trim()
+        if (!trimmedName) {
+          throw new Error('Job name cannot be empty')
+        }
+        updates.name = trimmedName
+      }
+      if (updateData.status !== undefined) {
+        updates.status = updateData.status
+      }
+
+      const { data, error } = await this.supabase
+        .from('job_instances')
+        .update(updates)
+        .eq('instance_id', id.trim())
+        .select()
+        .single()
+
+      if (error) {
+        this.handleSupabaseError(error, 'update', `with ID ${id}`)
+      }
+
+      if (!data) {
+        throw new Error(`Job with ID ${id} not found for update`)
+      }
+
+      return data as JobInstance
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error
+      }
+      throw new Error(`Unexpected error updating job: ${getErrorMessage(error)}`)
     }
-
-    if (updateData.name !== undefined) updates.name = updateData.name
-    if (updateData.status !== undefined) updates.status = updateData.status
-
-    const { data, error } = await this.supabase
-      .from('job_instances')
-      .update(updates)
-      .eq('instance_id', id)
-      .select()
-      .single()
-
-    if (error) {
-      throw new Error(`Failed to update job: ${error.message}`)
-    }
-
-    return data as JobInstance
   }
 
   /**
@@ -252,13 +357,28 @@ export class JobUseCases {
    * Delete a job
    */
   async deleteJob(id: string): Promise<void> {
-    const { error } = await this.supabase
-      .from('job_instances')
-      .delete()
-      .eq('instance_id', id)
+    try {
+      if (!id || typeof id !== 'string') {
+        throw new Error('Valid job ID is required')
+      }
 
-    if (error) {
-      throw new Error(`Failed to delete job: ${error.message}`)
+      const { error, count } = await this.supabase
+        .from('job_instances')
+        .delete({ count: 'exact' })
+        .eq('instance_id', id.trim())
+
+      if (error) {
+        this.handleSupabaseError(error, 'delete', `with ID ${id}`)
+      }
+
+      if (count === 0) {
+        throw new Error(`Job with ID ${id} not found for deletion`)
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error
+      }
+      throw new Error(`Unexpected error deleting job: ${getErrorMessage(error)}`)
     }
   }
 
