@@ -3,10 +3,6 @@
   "version": "1.0.0",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
-  "scripts": {
-    "lint": "eslint src/",
-    "type-check": "tsc --noEmit"
-  },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",
     "class-variance-authority": "^0.7.1",

@@ -1,23 +1,34 @@
-# Personal overrides for direnv (DO NOT COMMIT SECRETS)
-# Copy to .envrc.local and set your local values.
+# Personal direnv configuration example (DO NOT COMMIT SECRETS)
+# Copy to .envrc.local and set your actual values
+# Use: cp .envrc.local.example .envrc.local
 
-# Backend API
-export NEXT_PUBLIC_API_URL="http://localhost:8000"
+# Database Configuration
+export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/vulcan"
+export POSTGRES_SERVER="localhost" 
+export POSTGRES_USER="postgres"
+export POSTGRES_PASSWORD="postgres"
+export POSTGRES_DB="vulcan"
 
-# Supabase (example values; replace with your project)
-# Project URL (same for frontend/backend)
+# Backend Configuration
+export PROJECT_NAME="Vulcan MES"
+export SECRET_KEY="changeme-use-a-secure-key-in-production"
+export BACKEND_CORS_ORIGINS='["http://localhost:3000"]'
+export FIRST_SUPERUSER="admin@vulcan.com"
+export FIRST_SUPERUSER_PASSWORD="changeme"
+
+# Redis Cache
+export REDIS_URL="redis://localhost:6379"
+
+# Supabase Configuration
 export SUPABASE_URL="https://your-project.supabase.co"
+export SUPABASE_PUBLISHABLE_KEY="your-publishable-key"
+export SUPABASE_SECRET="your-secret-key"
+
+# Frontend Public Variables (derived from above)
+export NEXT_PUBLIC_API_URL="http://localhost:8000"
 export NEXT_PUBLIC_SUPABASE_URL="$SUPABASE_URL"
+export NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY"
+export NEXT_PUBLIC_APP_NAME="$PROJECT_NAME"
 
-# New dashboard naming (preferred to paste):
-# Publishable key (safe for browser)
-# export NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="sb_publishable_..."
-# Secret key (server-only)
-# export SUPABASE_SECRET="sb_secret_..."
-
-# Legacy variable names (still supported by our code):
-# export NEXT_PUBLIC_SUPABASE_ANON_KEY="ey...anon..."
-# export SUPABASE_SERVICE_KEY="ey...service..."   # server-only, do not expose publicly
-
-# Optional: custom app branding for local
-export NEXT_PUBLIC_APP_NAME="Vulcan (Local)"
+# Environment
+export ENVIRONMENT="local"

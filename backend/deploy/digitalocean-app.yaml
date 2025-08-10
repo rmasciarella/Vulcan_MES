@@ -1,0 +1,52 @@
+# DigitalOcean App Platform spec for FastAPI backend
+# Usage:
+# 1) Commit this file to your repo
+# 2) In DigitalOcean: Apps -> Create App -> Use your GitHub repo
+# 3) When prompted, choose to use an App Spec and paste this file
+# 4) Set the environment variables in the DO UI (mark secrets appropriately)
+# 5) Deploy — you’ll get a URL like https://<app-id>.ondigitalocean.app
+
+name: vulcan-backend
+region: nyc
+
+services:
+  - name: backend
+    image:
+      registry_type: DOCR
+      registry: vulcan
+      repository: vulcan-backend
+      tag: e779005
+    http_port: 8000                 # Your app listens on 8000
+    instance_count: 1
+    instance_size_slug: basic-xs    # ~1GB RAM recommended for OR-Tools starter
+    health_check:
+      http_path: /api/v1/utils/health-check/
+      initial_delay_seconds: 10
+      period_seconds: 30
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 3
+    envs:
+      # Runtime configuration (fill these in the DO UI if you don’t want them in git)
+      - key: ENVIRONMENT
+        value: production
+        scope: RUN_TIME
+      - key: FRONTEND_URL
+        value: https://vulcanmes.netlify.app
+        scope: RUN_TIME
+      - key: SUPABASE_URL
+        value: ""
+        scope: RUN_TIME
+      - key: SUPABASE_ANON_KEY
+        value: ""
+        scope: RUN_TIME
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        value: ""
+        scope: RUN_TIME
+        type: SECRET
+      # Observability (optional)
+      - key: SENTRY_DSN
+        value: ""
+        scope: RUN_TIME
+        type: SECRET
+

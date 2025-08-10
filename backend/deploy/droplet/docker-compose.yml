@@ -1,0 +1,32 @@
+version: "3.9"
+
+services:
+  backend:
+    image: vulcan-backend:latest  # or your-registry/your-image:tag
+    build:
+      context: ../../..
+      dockerfile: apps/backend/Dockerfile
+    env_file:
+      - .env
+    environment:
+      # Override or add envs here if not using .env
+      ENVIRONMENT: production
+      FRONTEND_URL: https://vulcanmes.netlify.app
+    ports:
+      - "127.0.0.1:8000:8000"  # only expose to localhost; Nginx will proxy from 443
+    command: ["fastapi", "run", "--workers", "4", "--host", "0.0.0.0", "--port", "8000", "app/main.py"]
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    depends_on:
+      - backend
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    restart: unless-stopped
+
+# After containers are up, use certbot on the host to issue TLS certs and mount them into /etc/letsencrypt/live/your-domain
+

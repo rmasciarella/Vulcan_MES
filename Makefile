@@ -76,7 +76,7 @@ frontend:
 # Docker
 docker-up:
 	@echo "🐳 Starting Docker services..."
-	@docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+	@docker-compose -f config/docker/docker-compose.yml -f config/docker/docker-compose.dev.yml up -d
 	@echo "✅ Services started!"
 	@echo "   Frontend: http://localhost:3000"
 	@echo "   Backend:  http://localhost:8000"
@@ -85,14 +85,14 @@ docker-up:
 
 docker-down:
 	@echo "🛑 Stopping Docker services..."
-	@docker-compose down
+	@docker-compose -f config/docker/docker-compose.yml down
 
 docker-logs:
-	@docker-compose logs -f
+	@docker-compose -f config/docker/docker-compose.yml logs -f
 
 docker-build:
 	@echo "🏗️ Building Docker images..."
-	@docker-compose build
+	@docker-compose -f config/docker/docker-compose.yml build
 
 # Testing
 test:
@@ -164,7 +164,7 @@ clean:
 build:
 	@echo "🏗️ Building for production..."
 	@pnpm build
-	@docker-compose build
+	@docker-compose -f config/docker/docker-compose.yml build
 
 # Netlify: Set Production env vars for frontend from direnv and deploy
 netlify-env-prod:
