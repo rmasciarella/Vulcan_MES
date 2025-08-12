@@ -23,7 +23,8 @@
     "backend:test": "cd apps/backend && uv run pytest",
     "backend:format": "uv run ruff format apps/backend",
     "backend:lint": "uv run ruff check apps/backend",
-    "sync": "pnpm install && uv sync"
+    "sync": "pnpm install && uv sync",
+    "health": "turbo health"
   },
   "devDependencies": {
     "@types/node": "^22.5.4",
